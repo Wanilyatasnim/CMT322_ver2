@@ -20,7 +20,7 @@ const Navbar = () => {
       <div className="navbar-content">
         <Link to="/" className="navbar-brand" onClick={() => setMobileMenuOpen(false)}>
           <FaShoppingBag style={{ display: 'inline', marginRight: '8px' }} />
-          2street
+          2Street.my
         </Link>
         
         <button

@@ -3,13 +3,19 @@ import { Link } from 'react-router-dom';
 import { listingsAPI } from '../services/api';
 import ProductCard from '../components/ProductCard';
 
-const CATEGORIES = ['All', 'Electronics', 'Furniture', 'Books', 'Appliances', 'Others'];
+const CATEGORIES = [
+  { name: 'Electronics', icon: '📱', color: '#4A90E2' },
+  { name: 'Furniture', icon: '🪑', color: '#50C878' },
+  { name: 'Books', icon: '📚', color: '#FF6B6B' },
+  { name: 'Appliances', icon: '🔌', color: '#9B59B6' },
+  { name: 'Others', icon: '📦', color: '#F39C12' }
+];
 
 const Homepage = () => {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
 
@@ -35,7 +41,7 @@ const Homepage = () => {
       const params = {};
       
       if (searchTerm) params.search = searchTerm;
-      if (selectedCategory && selectedCategory !== 'All') params.category = selectedCategory;
+      if (selectedCategory) params.category = selectedCategory;
       if (minPrice) params.minPrice = minPrice;
       if (maxPrice) params.maxPrice = maxPrice;
       
@@ -50,17 +56,57 @@ const Homepage = () => {
 
   const handleClearFilters = () => {
     setSearchTerm('');
-    setSelectedCategory('All');
+    setSelectedCategory('');
     setMinPrice('');
     setMaxPrice('');
     fetchListings();
   };
 
+  const handleCategoryClick = (categoryName) => {
+    setSelectedCategory(categoryName);
+    // Automatically fetch listings for that category
+    fetchCategoryListings(categoryName);
+  };
+
+  const fetchCategoryListings = async (category) => {
+    try {
+      setLoading(true);
+      const response = await listingsAPI.getAll({ category });
+      setListings(response.data);
+    } catch (error) {
+      console.error('Error fetching category listings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1>Welcome to 2street</h1>
+        <h1>Welcome to 2Street.my</h1>
         <p>Buy and sell secondhand items within the USM community</p>
+      </div>
+
+      {/* Category Cards Section */}
+      <div className="categories-section">
+        <h2 style={{ marginBottom: '20px', fontSize: '24px', fontWeight: '600' }}>Browse by Category</h2>
+        <div className="category-cards">
+          {CATEGORIES.map(category => (
+            <div
+              key={category.name}
+              className="category-card"
+              style={{ 
+                border: selectedCategory === category.name ? `3px solid ${category.color}` : '2px solid #e0e0e0'
+              }}
+              onClick={() => handleCategoryClick(category.name)}
+            >
+              <div className="category-icon" style={{ color: category.color, fontSize: '48px' }}>
+                {category.icon}
+              </div>
+              <div className="category-name">{category.name}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="search-section">
@@ -81,18 +127,6 @@ const Homepage = () => {
         </div>
 
         <div className="filters">
-          <div className="filter-group">
-            <label>Category</label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              {CATEGORIES.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
-
           <div className="filter-group">
             <label>Min Price (RM)</label>
             <input

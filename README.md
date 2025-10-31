@@ -1,4 +1,4 @@
-# 2street - USM Student Marketplace
+# 2Street.my - USM Student Marketplace
 
 A simple platform for USM students to buy and sell secondhand items within the campus community.
 
