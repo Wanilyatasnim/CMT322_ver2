@@ -49,11 +49,12 @@ async function seedDatabaseIfEmpty() {
     const { query } = require('./config/database');
     const bcrypt = require('bcryptjs');
     
-    // Check if admin exists (quick check if DB has data)
-    const admin = await query.get("SELECT * FROM users WHERE email = 'admin@2street.usm.my'");
+    // Check if listings exist (admin might exist from db.init())
+    const listings = await query.all("SELECT COUNT(*) as count FROM listings");
+    const hasListings = listings && listings.length > 0 && listings[0].count > 0;
     
-    if (!admin) {
-      console.log('Database is empty. Seeding sample data...');
+    if (!hasListings) {
+      console.log('Database has no listings. Seeding sample data...');
       
       // Sample users
       const users = [
