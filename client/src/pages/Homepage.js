@@ -10,11 +10,22 @@ const CATEGORIES = [
   { name: 'Others', icon: '📦', color: '#F39C12' }
 ];
 
+const CONDITIONS = ['New', 'Like New', 'Good', 'Fair'];
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
+  { value: 'price-low', label: 'Price: Low to High' },
+  { value: 'price-high', label: 'Price: High to Low' }
+];
+
 const Homepage = () => {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCondition, setSelectedCondition] = useState('');
+  const [location, setLocation] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
 
@@ -25,7 +36,8 @@ const Homepage = () => {
   const fetchListings = async () => {
     try {
       setLoading(true);
-      const response = await listingsAPI.getAll();
+      const params = { sortBy: 'newest' };
+      const response = await listingsAPI.getAll(params);
       setListings(response.data);
     } catch (error) {
       console.error('Error fetching listings:', error);
@@ -41,8 +53,11 @@ const Homepage = () => {
       
       if (searchTerm) params.search = searchTerm;
       if (selectedCategory) params.category = selectedCategory;
+      if (selectedCondition) params.condition = selectedCondition;
+      if (location) params.location = location;
       if (minPrice) params.minPrice = minPrice;
       if (maxPrice) params.maxPrice = maxPrice;
+      if (sortBy) params.sortBy = sortBy;
       
       const response = await listingsAPI.getAll(params);
       setListings(response.data);
@@ -56,21 +71,58 @@ const Homepage = () => {
   const handleClearFilters = () => {
     setSearchTerm('');
     setSelectedCategory('');
+    setSelectedCondition('');
+    setLocation('');
+    setSortBy('newest');
     setMinPrice('');
     setMaxPrice('');
     fetchListings();
   };
 
+  const handleSortChange = (e) => {
+    setSortBy(e.target.value);
+    handleSearchWithCurrentFilters(e.target.value);
+  };
+
+  const handleSearchWithCurrentFilters = async (sort = sortBy) => {
+    try {
+      setLoading(true);
+      const params = {};
+      
+      if (searchTerm) params.search = searchTerm;
+      if (selectedCategory) params.category = selectedCategory;
+      if (selectedCondition) params.condition = selectedCondition;
+      if (location) params.location = location;
+      if (minPrice) params.minPrice = minPrice;
+      if (maxPrice) params.maxPrice = maxPrice;
+      if (sort) params.sortBy = sort;
+      
+      const response = await listingsAPI.getAll(params);
+      setListings(response.data);
+    } catch (error) {
+      console.error('Error searching listings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCategoryClick = (categoryName) => {
     setSelectedCategory(categoryName);
-    // Automatically fetch listings for that category
+    // Automatically fetch listings for that category with current filters
     fetchCategoryListings(categoryName);
   };
 
   const fetchCategoryListings = async (category) => {
     try {
       setLoading(true);
-      const response = await listingsAPI.getAll({ category });
+      const params = { category };
+      if (selectedCondition) params.condition = selectedCondition;
+      if (location) params.location = location;
+      if (minPrice) params.minPrice = minPrice;
+      if (maxPrice) params.maxPrice = maxPrice;
+      if (sortBy) params.sortBy = sortBy;
+      
+      const response = await listingsAPI.getAll(params);
       setListings(response.data);
     } catch (error) {
       console.error('Error fetching category listings:', error);
@@ -126,6 +178,52 @@ const Homepage = () => {
         </div>
 
         <div className="filters">
+          <div className="filter-group">
+            <label>Sort By</label>
+            <select
+              value={sortBy}
+              onChange={handleSortChange}
+              style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
+            >
+              {SORT_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label>Condition</label>
+            <select
+              value={selectedCondition}
+              onChange={(e) => {
+                setSelectedCondition(e.target.value);
+                setTimeout(() => handleSearch(), 100);
+              }}
+              style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
+            >
+              <option value="">All Conditions</option>
+              {CONDITIONS.map(condition => (
+                <option key={condition} value={condition}>
+                  {condition}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label>Location</label>
+            <input
+              type="text"
+              placeholder="e.g., Aman Damai Hostel"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
+            />
+          </div>
+
           <div className="filter-group">
             <label>Min Price (RM)</label>
             <input

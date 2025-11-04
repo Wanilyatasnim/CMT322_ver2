@@ -24,6 +24,18 @@ router.get('/', async (req, res) => {
       params.push(req.query.category);
     }
 
+    // Filter by condition
+    if (req.query.condition) {
+      sql += ' AND condition = ?';
+      params.push(req.query.condition);
+    }
+
+    // Filter by location
+    if (req.query.location) {
+      sql += ' AND location LIKE ?';
+      params.push(`%${req.query.location}%`);
+    }
+
     // Filter by price range
     if (req.query.minPrice) {
       sql += ' AND price >= ?';
@@ -34,7 +46,24 @@ router.get('/', async (req, res) => {
       params.push(req.query.maxPrice);
     }
 
-    sql += ' ORDER BY created_at DESC';
+    // Sorting
+    const sortBy = req.query.sortBy || 'newest';
+    switch (sortBy) {
+      case 'newest':
+        sql += ' ORDER BY created_at DESC';
+        break;
+      case 'oldest':
+        sql += ' ORDER BY created_at ASC';
+        break;
+      case 'price-low':
+        sql += ' ORDER BY price ASC';
+        break;
+      case 'price-high':
+        sql += ' ORDER BY price DESC';
+        break;
+      default:
+        sql += ' ORDER BY created_at DESC';
+    }
 
     const listings = await query.all(sql, params);
     res.json(listings);
