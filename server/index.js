@@ -43,13 +43,43 @@ db.init().then(() => {
   process.exit(1);
 });
 
+// Function to check and fix database integrity
+async function checkDatabaseIntegrity() {
+  try {
+    const { query } = require('./config/database');
+    
+    // Check for orphaned listings (listings with invalid user_ids)
+    const orphanedListings = await query.all(
+      `SELECT l.id, l.user_id, l.title 
+       FROM listings l 
+       LEFT JOIN users u ON l.user_id = u.id 
+       WHERE u.id IS NULL`
+    );
+    
+    if (orphanedListings && orphanedListings.length > 0) {
+      console.log(`⚠ Found ${orphanedListings.length} orphaned listing(s). Cleaning up...`);
+      for (const listing of orphanedListings) {
+        await query.run('DELETE FROM listings WHERE id = ?', [listing.id]);
+        console.log(`  ✓ Deleted orphaned listing: ${listing.title} (ID: ${listing.id})`);
+      }
+    }
+    
+    console.log('✓ Database integrity check completed');
+  } catch (error) {
+    console.error('Error checking database integrity:', error);
+  }
+}
+
 // Function to seed database if empty
 async function seedDatabaseIfEmpty() {
   try {
     const { query } = require('./config/database');
     const bcrypt = require('bcryptjs');
     
-    // Always check and create sample users if they don't exist (don't check listings first)
+    // First, check database integrity
+    await checkDatabaseIntegrity();
+    
+    // Always check and create sample users if they don't exist
     console.log('Checking for sample users...');
     
     // Sample users data
@@ -59,19 +89,26 @@ async function seedDatabaseIfEmpty() {
       { name: 'Lee Wei Ming', email: 'lee.weiming@student.usm.my', password: bcrypt.hashSync('password123', 10), phone: '0165432198', matric: '345678' }
     ];
     
+    // Store created user IDs
+    const userIds = {};
+    
     // Check and create each sample user if they don't exist
     for (const userData of sampleUsers) {
-      const existingUser = await query.get(
+      let existingUser = await query.get(
         'SELECT * FROM users WHERE email = ?',
         [userData.email]
       );
       
       if (!existingUser) {
-        await query.run(
+        const result = await query.run(
           `INSERT INTO users (name, email, password, phone, matric_number) VALUES (?, ?, ?, ?, ?)`,
           [userData.name, userData.email, userData.password, userData.phone, userData.matric]
         );
-        console.log(`✓ Created sample user: ${userData.name}`);
+        console.log(`✓ Created sample user: ${userData.name} (ID: ${result.id})`);
+        userIds[userData.email] = result.id;
+      } else {
+        userIds[userData.email] = existingUser.id;
+        console.log(`✓ Sample user exists: ${userData.name} (ID: ${existingUser.id})`);
       }
     }
     
@@ -82,21 +119,21 @@ async function seedDatabaseIfEmpty() {
     if (!hasListings) {
       console.log('Database has no listings. Seeding sample listings...');
       
-      // Get user IDs for listings (after ensuring users exist)
-      const user1 = await query.get("SELECT id FROM users WHERE email = 'ahmad.zaki@student.usm.my'");
-      const user2 = await query.get("SELECT id FROM users WHERE email = 'siti.sarah@student.usm.my'");
-      const user3 = await query.get("SELECT id FROM users WHERE email = 'lee.weiming@student.usm.my'");
+      // Use stored user IDs
+      const user1Id = userIds['ahmad.zaki@student.usm.my'];
+      const user2Id = userIds['siti.sarah@student.usm.my'];
+      const user3Id = userIds['lee.weiming@student.usm.my'];
       
-      if (user1 && user2 && user3) {
+      if (user1Id && user2Id && user3Id) {
         // Sample listings (using actual user IDs)
         const listingsData = [
-          [user1.id, 'MacBook Pro 13 inch M1 Chip', 'Excellent condition MacBook Pro with M1 chip. 256GB SSD, 8GB RAM.', 3500.00, 'Electronics', 'Like New', 'Aman Damai Hostel', 'macbook.jpg'],
-          [user2.id, 'IKEA Study Table with Drawer', 'Good quality study table with built-in drawer. White color.', 150.00, 'Furniture', 'Good', 'Ria Hostel', 'table.jpg'],
-          [user3.id, 'Calculus Textbook - James Stewart', 'Used for one semester only, minimal highlights.', 80.00, 'Books', 'Good', 'Cahaya Gemilang Hostel', 'book.jpg'],
-          [user1.id, 'Samsung Galaxy S21 Ultra', 'Excellent condition, screen protector included.', 2200.00, 'Electronics', 'Like New', 'Aman Damai Hostel', 'samsung.jpg'],
-          [user2.id, 'Mini Refrigerator - Sharp', 'Perfect for hostel room. Energy efficient.', 280.00, 'Appliances', 'Good', 'Ria Hostel', 'fridge.jpg'],
-          [user3.id, 'Chemistry Lab Coat', 'White lab coat for chemistry practical classes.', 35.00, 'Others', 'Good', 'Cahaya Gemilang Hostel', 'labcoat.jpg'],
-          [user1.id, 'AirPods Pro 2nd Generation', 'Apple AirPods Pro 2nd generation with MagSafe.', 750.00, 'Electronics', 'Like New', 'Aman Damai Hostel', 'airpods.jpg']
+          [user1Id, 'MacBook Pro 13 inch M1 Chip', 'Excellent condition MacBook Pro with M1 chip. 256GB SSD, 8GB RAM.', 3500.00, 'Electronics', 'Like New', 'Aman Damai Hostel', 'macbook.jpg'],
+          [user2Id, 'IKEA Study Table with Drawer', 'Good quality study table with built-in drawer. White color.', 150.00, 'Furniture', 'Good', 'Ria Hostel', 'table.jpg'],
+          [user3Id, 'Calculus Textbook - James Stewart', 'Used for one semester only, minimal highlights.', 80.00, 'Books', 'Good', 'Cahaya Gemilang Hostel', 'book.jpg'],
+          [user1Id, 'Samsung Galaxy S21 Ultra', 'Excellent condition, screen protector included.', 2200.00, 'Electronics', 'Like New', 'Aman Damai Hostel', 'samsung.jpg'],
+          [user2Id, 'Mini Refrigerator - Sharp', 'Perfect for hostel room. Energy efficient.', 280.00, 'Appliances', 'Good', 'Ria Hostel', 'fridge.jpg'],
+          [user3Id, 'Chemistry Lab Coat', 'White lab coat for chemistry practical classes.', 35.00, 'Others', 'Good', 'Cahaya Gemilang Hostel', 'labcoat.jpg'],
+          [user1Id, 'AirPods Pro 2nd Generation', 'Apple AirPods Pro 2nd generation with MagSafe.', 750.00, 'Electronics', 'Like New', 'Aman Damai Hostel', 'airpods.jpg']
         ];
         
         for (const listing of listingsData) {
@@ -107,11 +144,15 @@ async function seedDatabaseIfEmpty() {
           );
         }
         
-        console.log('Sample listings created');
+        console.log('✓ Sample listings created');
+      } else {
+        console.log('⚠ Could not create listings: missing user IDs');
       }
+    } else {
+      console.log('✓ Database already has listings');
     }
     
-    console.log('Database seeding check completed!');
+    console.log('✓ Database seeding check completed!');
   } catch (error) {
     console.error('Error seeding database:', error);
   }
