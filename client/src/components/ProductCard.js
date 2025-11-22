@@ -1,9 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { getImageUrl } from '../utils/imageUtils';
 
 const ProductCard = ({ listing }) => {
   const imageUrl = listing.images ? 
-    `${process.env.REACT_APP_API_URL || ''}/uploads/${listing.images.split(',')[0]}` :
+    getImageUrl(listing.images.split(',')[0]) :
     '';
 
   return (

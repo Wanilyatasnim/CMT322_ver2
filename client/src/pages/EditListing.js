@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { listingsAPI } from '../services/api';
+import { getImageUrl } from '../utils/imageUtils';
 
 const CATEGORIES = ['Electronics', 'Furniture', 'Books', 'Appliances', 'Others'];
 const CONDITIONS = ['New', 'Like New', 'Good', 'Fair'];
@@ -45,9 +46,7 @@ const EditListing = () => {
       if (listing.images) {
         const images = listing.images.split(',');
         setExistingImages(images);
-        setImagePreviews(images.map(img => 
-          `${process.env.REACT_APP_API_URL || ''}/uploads/${img}`
-        ));
+        setImagePreviews(images.map(img => getImageUrl(img)));
       }
     } catch (error) {
       console.error('Error fetching listing:', error);
@@ -71,9 +70,7 @@ const EditListing = () => {
     setImages(newImages);
 
     // Combine existing images with new ones for preview
-    const existingPreviews = existingImages.map(img => 
-      `${process.env.REACT_APP_API_URL || ''}/uploads/${img}`
-    );
+    const existingPreviews = existingImages.map(img => getImageUrl(img));
     const newPreviews = newImages.map(file => URL.createObjectURL(file));
     setImagePreviews([...existingPreviews, ...newPreviews]);
   };
@@ -85,9 +82,7 @@ const EditListing = () => {
       setExistingImages(newExisting);
       
       // Rebuild previews: existing (after removal) + new images
-      const existingPreviews = newExisting.map(img => 
-        `${process.env.REACT_APP_API_URL || ''}/uploads/${img}`
-      );
+      const existingPreviews = newExisting.map(img => getImageUrl(img));
       const newPreviews = images.map(file => URL.createObjectURL(file));
       setImagePreviews([...existingPreviews, ...newPreviews]);
     } else {
@@ -97,9 +92,7 @@ const EditListing = () => {
       setImages(newImages);
       
       // Rebuild previews: existing + new images (after removal)
-      const existingPreviews = existingImages.map(img => 
-        `${process.env.REACT_APP_API_URL || ''}/uploads/${img}`
-      );
+      const existingPreviews = existingImages.map(img => getImageUrl(img));
       const newPreviews = newImages.map(file => URL.createObjectURL(file));
       setImagePreviews([...existingPreviews, ...newPreviews]);
     }

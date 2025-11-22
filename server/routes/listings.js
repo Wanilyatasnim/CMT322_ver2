@@ -111,7 +111,8 @@ router.post('/', verifyToken, multer.array('images', 3), async (req, res) => {
       return res.status(400).json({ error: 'Please upload at least one image' });
     }
 
-    const images = req.files.map(file => file.filename).join(',');
+    // Cloudinary returns file.path (URL) instead of file.filename
+    const images = req.files.map(file => file.path).join(',');
 
     const result = await query.run(
       `INSERT INTO listings (user_id, title, description, price, category, condition, location, images) 
@@ -150,7 +151,8 @@ router.put('/:id', verifyToken, multer.array('images', 3), async (req, res) => {
     
     // Combine existing images (if provided) with new images
     const existingImagesArray = existingImages ? existingImages.split(',').filter(img => img.trim()) : [];
-    const newImagesArray = req.files && req.files.length > 0 ? req.files.map(file => file.filename) : [];
+    // Cloudinary returns file.path (URL), local storage returns file.filename
+    const newImagesArray = req.files && req.files.length > 0 ? req.files.map(file => file.path || file.filename) : [];
     
     // Merge existing and new images
     const allImages = [...existingImagesArray, ...newImagesArray];

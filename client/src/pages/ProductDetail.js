@@ -4,6 +4,7 @@ import { listingsAPI, usersAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { FaWhatsapp, FaFlag, FaCheckCircle } from 'react-icons/fa';
 import ProductCard from '../components/ProductCard';
+import { getImageUrl } from '../utils/imageUtils';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -108,7 +109,7 @@ const ProductDetail = () => {
       <div className="product-detail-container">
         <div className="product-images">
           <img
-            src={mainImage ? `${process.env.REACT_APP_API_URL || ''}/uploads/${mainImage}` : ''}
+            src={mainImage ? getImageUrl(mainImage) : ''}
             alt={listing.title}
             className="main-image"
             onError={(e) => {
@@ -120,7 +121,7 @@ const ProductDetail = () => {
               {images.map((img, idx) => (
                 <img
                   key={idx}
-                  src={`${process.env.REACT_APP_API_URL || ''}/uploads/${img}`}
+                  src={getImageUrl(img)}
                   alt={`${listing.title} ${idx + 1}`}
                   className={`thumbnail ${img === mainImage ? 'active' : ''}`}
                   onClick={() => setMainImage(img)}
