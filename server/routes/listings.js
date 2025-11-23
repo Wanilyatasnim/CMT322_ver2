@@ -258,9 +258,45 @@ router.get('/:id/seller-listings', async (req, res) => {
 router.post('/:id/report', async (req, res) => {
   try {
     const { reason } = req.body;
+    const listingId = req.params.id;
     
-    // In a real implementation, this would send an email to admin
-    console.log(`Listing ${req.params.id} reported: ${reason}`);
+    // Check if listing exists
+    const listing = await query.get(
+      'SELECT * FROM listings WHERE id = ?',
+      [listingId]
+    );
+    
+    if (!listing) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
+    
+    // Get reporter info if user is logged in (optional)
+    let reporterUserId = null;
+    let reporterEmail = null;
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_here';
+        const decoded = jwt.verify(token, JWT_SECRET);
+        reporterUserId = decoded.userId;
+        const user = await query.get('SELECT email FROM users WHERE id = ?', [reporterUserId]);
+        if (user) {
+          reporterEmail = user.email;
+        }
+      } catch (err) {
+        // User not logged in or invalid token, report is anonymous
+      }
+    }
+    
+    // Save report to database
+    await query.run(
+      `INSERT INTO reports (listing_id, reporter_email, reporter_user_id, reason) 
+       VALUES (?, ?, ?, ?)`,
+      [listingId, reporterEmail, reporterUserId, reason]
+    );
+    
+    console.log(`Listing ${listingId} reported: ${reason}`);
     
     res.json({ message: 'Report submitted successfully' });
   } catch (error) {

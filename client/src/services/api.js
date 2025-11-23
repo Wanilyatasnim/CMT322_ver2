@@ -51,7 +51,9 @@ export const adminAPI = {
   deleteListing: (id) => api.delete(`/api/admin/listings/${id}`),
   banUser: (id) => api.patch(`/api/admin/users/${id}/ban`),
   unbanUser: (id) => api.patch(`/api/admin/users/${id}/unban`),
-  approveListing: (id) => api.patch(`/api/admin/listings/${id}/approve`)
+  approveListing: (id) => api.patch(`/api/admin/listings/${id}/approve`),
+  getReports: () => api.get('/api/admin/reports'),
+  resolveReport: (id) => api.patch(`/api/admin/reports/${id}/resolve`)
 };
 
 export default api;

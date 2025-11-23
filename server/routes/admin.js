@@ -83,6 +83,7 @@ router.get('/stats', async (req, res) => {
     const totalListings = await query.get('SELECT COUNT(*) as count FROM listings');
     const activeListings = await query.get("SELECT COUNT(*) as count FROM listings WHERE status = 'active'");
     const soldListings = await query.get("SELECT COUNT(*) as count FROM listings WHERE status = 'sold'");
+    const pendingReports = await query.get("SELECT COUNT(*) as count FROM reports WHERE status = 'pending'");
     
     // Debug: Log actual counts
     console.log(`[Admin Stats] Users: ${totalUsers.count}, Listings: ${totalListings.count}`);
@@ -91,10 +92,43 @@ router.get('/stats', async (req, res) => {
       totalUsers: totalUsers.count,
       totalListings: totalListings.count,
       activeListings: activeListings.count,
-      soldListings: soldListings.count
+      soldListings: soldListings.count,
+      pendingReports: pendingReports.count
     });
   } catch (error) {
     console.error('Get stats error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get all reports
+router.get('/reports', async (req, res) => {
+  try {
+    const reports = await query.all(
+      `SELECT r.*, l.title as listing_title, l.user_id as listing_owner_id, 
+       u.name as listing_owner_name, u.email as listing_owner_email
+       FROM reports r
+       LEFT JOIN listings l ON r.listing_id = l.id
+       LEFT JOIN users u ON l.user_id = u.id
+       ORDER BY r.created_at DESC`
+    );
+    res.json(reports);
+  } catch (error) {
+    console.error('Get reports error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Mark report as resolved
+router.patch('/reports/:id/resolve', async (req, res) => {
+  try {
+    await query.run(
+      `UPDATE reports SET status = ?, resolved_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      ['resolved', req.params.id]
+    );
+    res.json({ message: 'Report marked as resolved' });
+  } catch (error) {
+    console.error('Resolve report error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
