@@ -101,6 +101,10 @@ router.get('/:id', async (req, res) => {
 // Create listing
 router.post('/', verifyToken, multer.array('images', 3), async (req, res) => {
   try {
+    console.log('[Create Listing] Request received');
+    console.log('[Create Listing] Files:', req.files ? req.files.length : 0);
+    console.log('[Create Listing] Body:', req.body);
+
     const { title, description, price, category, condition, location } = req.body;
 
     if (!title || !description || !price || !category || !condition) {
@@ -108,6 +112,7 @@ router.post('/', verifyToken, multer.array('images', 3), async (req, res) => {
     }
 
     if (!req.files || req.files.length === 0) {
+      console.error('[Create Listing] No files uploaded');
       return res.status(400).json({ error: 'Please upload at least one image' });
     }
 

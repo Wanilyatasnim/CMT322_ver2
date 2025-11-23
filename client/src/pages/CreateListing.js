@@ -64,11 +64,19 @@ const CreateListing = () => {
         formDataToSend.append('images', image);
       });
 
-      await listingsAPI.create(formDataToSend);
+      console.log('Uploading listing with', images.length, 'image(s)...');
+      const response = await listingsAPI.create(formDataToSend);
+      console.log('Listing created successfully:', response.data);
       navigate('/my-listings');
     } catch (error) {
       console.error('Error creating listing:', error);
-      setError(error.response?.data?.error || 'Error creating listing');
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url
+      });
+      setError(error.response?.data?.error || error.message || 'Error creating listing. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
