@@ -113,6 +113,15 @@ router.post('/', verifyToken, multer.array('images', 3), async (req, res) => {
 
     // Cloudinary returns file.path (URL) instead of file.filename
     const images = req.files.map(file => file.path).join(',');
+    
+    // Log image storage info for debugging
+    const isCloudinary = images.includes('res.cloudinary.com');
+    console.log(`[Create Listing] Images stored: ${isCloudinary ? '✅ Cloudinary' : '⚠️ Local storage'}`);
+    if (isCloudinary) {
+      console.log(`[Create Listing] Cloudinary URLs: ${images}`);
+    } else {
+      console.warn(`[Create Listing] ⚠️ Images stored locally - will be lost on Railway redeploy!`);
+    }
 
     const result = await query.run(
       `INSERT INTO listings (user_id, title, description, price, category, condition, location, images) 

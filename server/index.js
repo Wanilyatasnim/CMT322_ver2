@@ -126,14 +126,16 @@ async function seedDatabaseIfEmpty() {
       
       if (user1Id && user2Id && user3Id) {
         // Sample listings (using actual user IDs)
+        // Using placeholder image URLs that work - users should upload their own images
+        const placeholderImage = 'https://via.placeholder.com/800x600/cccccc/666666?text=No+Image';
         const listingsData = [
-          [user1Id, 'MacBook Pro 13 inch M1 Chip', 'Excellent condition MacBook Pro with M1 chip. 256GB SSD, 8GB RAM.', 3500.00, 'Electronics', 'Like New', 'Aman Damai Hostel', 'macbook.jpg'],
-          [user2Id, 'IKEA Study Table with Drawer', 'Good quality study table with built-in drawer. White color.', 150.00, 'Furniture', 'Good', 'Ria Hostel', 'table.jpg'],
-          [user3Id, 'Calculus Textbook - James Stewart', 'Used for one semester only, minimal highlights.', 80.00, 'Books', 'Good', 'Cahaya Gemilang Hostel', 'book.jpg'],
-          [user1Id, 'Samsung Galaxy S21 Ultra', 'Excellent condition, screen protector included.', 2200.00, 'Electronics', 'Like New', 'Aman Damai Hostel', 'samsung.jpg'],
-          [user2Id, 'Mini Refrigerator - Sharp', 'Perfect for hostel room. Energy efficient.', 280.00, 'Appliances', 'Good', 'Ria Hostel', 'fridge.jpg'],
-          [user3Id, 'Chemistry Lab Coat', 'White lab coat for chemistry practical classes.', 35.00, 'Others', 'Good', 'Cahaya Gemilang Hostel', 'labcoat.jpg'],
-          [user1Id, 'AirPods Pro 2nd Generation', 'Apple AirPods Pro 2nd generation with MagSafe.', 750.00, 'Electronics', 'Like New', 'Aman Damai Hostel', 'airpods.jpg']
+          [user1Id, 'MacBook Pro 13 inch M1 Chip', 'Excellent condition MacBook Pro with M1 chip. 256GB SSD, 8GB RAM.', 3500.00, 'Electronics', 'Like New', 'Aman Damai Hostel', placeholderImage],
+          [user2Id, 'IKEA Study Table with Drawer', 'Good quality study table with built-in drawer. White color.', 150.00, 'Furniture', 'Good', 'Ria Hostel', placeholderImage],
+          [user3Id, 'Calculus Textbook - James Stewart', 'Used for one semester only, minimal highlights.', 80.00, 'Books', 'Good', 'Cahaya Gemilang Hostel', placeholderImage],
+          [user1Id, 'Samsung Galaxy S21 Ultra', 'Excellent condition, screen protector included.', 2200.00, 'Electronics', 'Like New', 'Aman Damai Hostel', placeholderImage],
+          [user2Id, 'Mini Refrigerator - Sharp', 'Perfect for hostel room. Energy efficient.', 280.00, 'Appliances', 'Good', 'Ria Hostel', placeholderImage],
+          [user3Id, 'Chemistry Lab Coat', 'White lab coat for chemistry practical classes.', 35.00, 'Others', 'Good', 'Cahaya Gemilang Hostel', placeholderImage],
+          [user1Id, 'AirPods Pro 2nd Generation', 'Apple AirPods Pro 2nd generation with MagSafe.', 750.00, 'Electronics', 'Like New', 'Aman Damai Hostel', placeholderImage]
         ];
         
         for (const listing of listingsData) {
