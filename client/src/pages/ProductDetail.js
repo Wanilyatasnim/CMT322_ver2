@@ -209,8 +209,8 @@ const ProductDetail = () => {
             <h2>Report Listing</h2>
             <form onSubmit={handleReport}>
               <div className="form-group">
-                <label>Reason for reporting</label>
-                <textarea name="reason" required placeholder="Please describe the issue..." />
+                <label htmlFor="report-reason">Reason for reporting</label>
+                <textarea id="report-reason" name="reason" required placeholder="Please describe the issue..." />
               </div>
               <div className="flex-between">
                 <button

@@ -18,6 +18,15 @@ const SORT_OPTIONS = [
   { value: 'price-high', label: 'Price: High to Low' }
 ];
 
+const filterInputIds = {
+  search: 'home-search-term',
+  sort: 'home-sort-by',
+  condition: 'home-condition',
+  location: 'home-location',
+  minPrice: 'home-min-price',
+  maxPrice: 'home-max-price'
+};
+
 const Homepage = () => {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -162,12 +171,18 @@ const Homepage = () => {
 
       <div className="search-section">
         <div className="search-bar">
+          <label htmlFor={filterInputIds.search} style={{ position: 'absolute', left: '-9999px' }}>
+            Search listings
+          </label>
           <input
+            id={filterInputIds.search}
             type="text"
             placeholder="Search for items..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            name="searchTerm"
+            aria-label="Search listings"
           />
           <button className="btn btn-primary" onClick={handleSearch}>
             Search
@@ -179,10 +194,12 @@ const Homepage = () => {
 
         <div className="filters">
           <div className="filter-group">
-            <label>Sort By</label>
+            <label htmlFor={filterInputIds.sort}>Sort By</label>
             <select
+              id={filterInputIds.sort}
               value={sortBy}
               onChange={handleSortChange}
+              name="sortBy"
               style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
             >
               {SORT_OPTIONS.map(option => (
@@ -194,13 +211,15 @@ const Homepage = () => {
           </div>
 
           <div className="filter-group">
-            <label>Condition</label>
+            <label htmlFor={filterInputIds.condition}>Condition</label>
             <select
+              id={filterInputIds.condition}
               value={selectedCondition}
               onChange={(e) => {
                 setSelectedCondition(e.target.value);
                 setTimeout(() => handleSearch(), 100);
               }}
+              name="condition"
               style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
             >
               <option value="">All Conditions</option>
@@ -213,36 +232,42 @@ const Homepage = () => {
           </div>
 
           <div className="filter-group">
-            <label>Location</label>
+            <label htmlFor={filterInputIds.location}>Location</label>
             <input
+              id={filterInputIds.location}
               type="text"
               placeholder="e.g., Aman Damai Hostel"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              name="location"
               style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
             />
           </div>
 
           <div className="filter-group">
-            <label>Min Price (RM)</label>
+            <label htmlFor={filterInputIds.minPrice}>Min Price (RM)</label>
             <input
+              id={filterInputIds.minPrice}
               type="number"
               placeholder="0"
               value={minPrice}
               onChange={(e) => setMinPrice(e.target.value)}
+              name="minPrice"
               min="0"
               step="0.01"
             />
           </div>
 
           <div className="filter-group">
-            <label>Max Price (RM)</label>
+            <label htmlFor={filterInputIds.maxPrice}>Max Price (RM)</label>
             <input
+              id={filterInputIds.maxPrice}
               type="number"
               placeholder="10000"
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
+              name="maxPrice"
               min="0"
               step="0.01"
             />
