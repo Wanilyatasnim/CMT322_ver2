@@ -1,7 +1,5 @@
 import axios from 'axios';
 
-// In production, use relative paths (same domain)
-// In development, use the proxy or explicit URL
 const API_URL = process.env.REACT_APP_API_URL || '';
 
 // Create axios instance with default config
@@ -9,8 +7,7 @@ const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
-  },
-  timeout: 30000 // 30 second timeout for image uploads
+  }
 });
 
 // Add token to requests
@@ -26,24 +23,12 @@ api.interceptors.request.use(config => {
 export const listingsAPI = {
   getAll: (params) => api.get('/api/listings', { params }),
   getOne: (id) => api.get(`/api/listings/${id}`),
-  create: (formData) => {
-    // Don't set Content-Type header - let browser set it with boundary for multipart/form-data
-    return api.post('/api/listings', formData, {
-      headers: { 
-        // Remove Content-Type to let browser set it automatically with boundary
-      },
-      timeout: 60000 // 60 seconds for image uploads
-    });
-  },
-  update: (id, formData) => {
-    // Don't set Content-Type header - let browser set it with boundary for multipart/form-data
-    return api.put(`/api/listings/${id}`, formData, {
-      headers: { 
-        // Remove Content-Type to let browser set it automatically with boundary
-      },
-      timeout: 60000 // 60 seconds for image uploads
-    });
-  },
+  create: (formData) => api.post('/api/listings', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  update: (id, formData) => api.put(`/api/listings/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
   delete: (id) => api.delete(`/api/listings/${id}`),
   markAsSold: (id) => api.patch(`/api/listings/${id}/sold`),
   getSellerListings: (id) => api.get(`/api/listings/${id}/seller-listings`),
@@ -63,12 +48,12 @@ export const adminAPI = {
   getUsers: () => api.get('/api/admin/users'),
   getListings: () => api.get('/api/admin/listings'),
   getStats: () => api.get('/api/admin/stats'),
+  getReports: () => api.get('/api/admin/reports'),
+  updateReportStatus: (id, status) => api.patch(`/api/admin/reports/${id}/status`, { status }),
   deleteListing: (id) => api.delete(`/api/admin/listings/${id}`),
   banUser: (id) => api.patch(`/api/admin/users/${id}/ban`),
   unbanUser: (id) => api.patch(`/api/admin/users/${id}/unban`),
-  approveListing: (id) => api.patch(`/api/admin/listings/${id}/approve`),
-  getReports: () => api.get('/api/admin/reports'),
-  resolveReport: (id) => api.patch(`/api/admin/reports/${id}/resolve`)
+  approveListing: (id) => api.patch(`/api/admin/listings/${id}/approve`)
 };
 
 export default api;

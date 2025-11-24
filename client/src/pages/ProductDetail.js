@@ -55,9 +55,23 @@ const ProductDetail = () => {
     }
   };
 
+  const handleOpenReportModal = () => {
+    if (!isAuthenticated) {
+      if (window.confirm('Please log in to report this listing. Go to the login page now?')) {
+        navigate('/login');
+      }
+      return;
+    }
+    setShowReportModal(true);
+  };
+
   const handleReport = async (e) => {
     e.preventDefault();
     const reason = e.target.reason.value;
+    if (!isAuthenticated) {
+      alert('Please log in to submit a report.');
+      return navigate('/login');
+    }
     try {
       await listingsAPI.report(id, reason);
       alert('Thank you for your report. We will review it shortly.');
@@ -173,7 +187,7 @@ const ProductDetail = () => {
                 <FaWhatsapp style={{ marginRight: '8px' }} />
                 Contact via WhatsApp
               </button>
-              <button onClick={() => setShowReportModal(true)} className="btn btn-secondary">
+              <button onClick={handleOpenReportModal} className="btn btn-secondary">
                 <FaFlag /> Report
               </button>
             </div>
@@ -209,8 +223,8 @@ const ProductDetail = () => {
             <h2>Report Listing</h2>
             <form onSubmit={handleReport}>
               <div className="form-group">
-                <label htmlFor="report-reason">Reason for reporting</label>
-                <textarea id="report-reason" name="reason" required placeholder="Please describe the issue..." />
+                <label>Reason for reporting</label>
+                <textarea name="reason" required placeholder="Please describe the issue..." />
               </div>
               <div className="flex-between">
                 <button

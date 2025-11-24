@@ -48,14 +48,14 @@ const init = () => {
       db.run(`CREATE TABLE IF NOT EXISTS reports (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         listing_id INTEGER NOT NULL,
+        reporter_id INTEGER NOT NULL,
+        reporter_name TEXT,
         reporter_email TEXT,
-        reporter_user_id INTEGER,
         reason TEXT NOT NULL,
         status TEXT DEFAULT 'pending',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        resolved_at DATETIME,
         FOREIGN KEY (listing_id) REFERENCES listings(id),
-        FOREIGN KEY (reporter_user_id) REFERENCES users(id)
+        FOREIGN KEY (reporter_id) REFERENCES users(id)
       )`);
 
       // Create admin user

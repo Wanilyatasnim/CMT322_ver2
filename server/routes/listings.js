@@ -101,10 +101,6 @@ router.get('/:id', async (req, res) => {
 // Create listing
 router.post('/', verifyToken, multer.array('images', 3), async (req, res) => {
   try {
-    console.log('[Create Listing] Request received');
-    console.log('[Create Listing] Files:', req.files ? req.files.length : 0);
-    console.log('[Create Listing] Body:', req.body);
-
     const { title, description, price, category, condition, location } = req.body;
 
     if (!title || !description || !price || !category || !condition) {
@@ -112,21 +108,11 @@ router.post('/', verifyToken, multer.array('images', 3), async (req, res) => {
     }
 
     if (!req.files || req.files.length === 0) {
-      console.error('[Create Listing] No files uploaded');
       return res.status(400).json({ error: 'Please upload at least one image' });
     }
 
     // Cloudinary returns file.path (URL) instead of file.filename
     const images = req.files.map(file => file.path).join(',');
-    
-    // Log image storage info for debugging
-    const isCloudinary = images.includes('res.cloudinary.com');
-    console.log(`[Create Listing] Images stored: ${isCloudinary ? '✅ Cloudinary' : '⚠️ Local storage'}`);
-    if (isCloudinary) {
-      console.log(`[Create Listing] Cloudinary URLs: ${images}`);
-    } else {
-      console.warn(`[Create Listing] ⚠️ Images stored locally - will be lost on Railway redeploy!`);
-    }
 
     const result = await query.run(
       `INSERT INTO listings (user_id, title, description, price, category, condition, location, images) 
@@ -269,50 +255,41 @@ router.get('/:id/seller-listings', async (req, res) => {
 });
 
 // Report listing
-router.post('/:id/report', async (req, res) => {
+router.post('/:id/report', verifyToken, async (req, res) => {
   try {
     const { reason } = req.body;
-    const listingId = req.params.id;
-    
-    // Check if listing exists
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ error: 'Please provide a reason for reporting.' });
+    }
+
     const listing = await query.get(
-      'SELECT * FROM listings WHERE id = ?',
-      [listingId]
+      'SELECT id, title FROM listings WHERE id = ?',
+      [req.params.id]
     );
-    
+
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' });
     }
-    
-    // Get reporter info if user is logged in (optional)
-    let reporterUserId = null;
-    let reporterEmail = null;
-    const token = req.headers.authorization?.split(' ')[1];
-    if (token) {
-      try {
-        const jwt = require('jsonwebtoken');
-        const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_here';
-        const decoded = jwt.verify(token, JWT_SECRET);
-        reporterUserId = decoded.userId;
-        const user = await query.get('SELECT email FROM users WHERE id = ?', [reporterUserId]);
-        if (user) {
-          reporterEmail = user.email;
-        }
-      } catch (err) {
-        // User not logged in or invalid token, report is anonymous
-      }
-    }
-    
-    // Save report to database
-    await query.run(
-      `INSERT INTO reports (listing_id, reporter_email, reporter_user_id, reason) 
-       VALUES (?, ?, ?, ?)`,
-      [listingId, reporterEmail, reporterUserId, reason]
+
+    const reporter = await query.get(
+      'SELECT name, email FROM users WHERE id = ?',
+      [req.user.userId]
     );
-    
-    console.log(`Listing ${listingId} reported: ${reason}`);
-    
-    res.json({ message: 'Report submitted successfully' });
+
+    await query.run(
+      `INSERT INTO reports (listing_id, reporter_id, reporter_name, reporter_email, reason)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        listing.id,
+        req.user.userId,
+        reporter?.name || null,
+        reporter?.email || null,
+        reason.trim()
+      ]
+    );
+
+    res.status(201).json({ message: 'Report submitted successfully' });
   } catch (error) {
     console.error('Report listing error:', error);
     res.status(500).json({ error: 'Server error' });

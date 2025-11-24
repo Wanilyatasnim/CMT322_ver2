@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
-import { FaTrash, FaBan, FaFlag, FaCheck } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { FaTrash, FaBan, FaEye } from 'react-icons/fa';
+
+const REPORT_STATUSES = ['pending', 'reviewing', 'resolved', 'dismissed'];
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('stats');
@@ -10,7 +11,7 @@ const AdminDashboard = () => {
   const [listings, setListings] = useState([]);
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const [updatingReportId, setUpdatingReportId] = useState(null);
 
   const fetchStats = async () => {
     try {
@@ -102,22 +103,18 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleResolveReport = async (reportId) => {
-    if (window.confirm('Mark this report as resolved?')) {
-      try {
-        await adminAPI.resolveReport(reportId);
-        setReports(reports.map(report =>
-          report.id === reportId
-            ? { ...report, status: 'resolved', resolved_at: new Date().toISOString() }
-            : report
-        ));
-        // Refresh stats to update pending reports count
-        if (activeTab === 'stats') fetchStats();
-        alert('Report marked as resolved');
-      } catch (error) {
-        console.error('Error resolving report:', error);
-        alert('Error resolving report');
-      }
+  const handleReportStatusChange = async (reportId, newStatus) => {
+    try {
+      setUpdatingReportId(reportId);
+      await adminAPI.updateReportStatus(reportId, newStatus);
+      setReports(prevReports => prevReports.map(report =>
+        report.id === reportId ? { ...report, status: newStatus } : report
+      ));
+    } catch (error) {
+      console.error('Error updating report status:', error);
+      alert('Error updating report status');
+    } finally {
+      setUpdatingReportId(null);
     }
   };
 
@@ -150,7 +147,7 @@ const AdminDashboard = () => {
           className={`btn ${activeTab === 'reports' ? 'btn-primary' : 'btn-secondary'}`}
           onClick={() => setActiveTab('reports')}
         >
-          <FaFlag /> Reports {stats?.pendingReports > 0 && `(${stats.pendingReports})`}
+          Reports
         </button>
       </div>
 
@@ -176,14 +173,6 @@ const AdminDashboard = () => {
             </h2>
             <p style={{ color: '#666' }}>Sold Items</p>
           </div>
-          {stats.pendingReports !== undefined && (
-            <div className="card text-center">
-              <h2 style={{ fontSize: '48px', marginBottom: '10px', color: '#ff9800' }}>
-                {stats.pendingReports}
-              </h2>
-              <p style={{ color: '#666' }}>Pending Reports</p>
-            </div>
-          )}
         </div>
       )}
 
@@ -310,97 +299,82 @@ const AdminDashboard = () => {
           ) : (
             <div className="card">
               <h2>User Reports ({reports.length})</h2>
-              {reports.length === 0 ? (
-                <p style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
-                  No reports found.
-                </p>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '2px solid #eee' }}>
-                        <th style={{ padding: '10px', textAlign: 'left' }}>ID</th>
-                        <th style={{ padding: '10px', textAlign: 'left' }}>Listing</th>
-                        <th style={{ padding: '10px', textAlign: 'left' }}>Reporter</th>
-                        <th style={{ padding: '10px', textAlign: 'left' }}>Reason</th>
-                        <th style={{ padding: '10px', textAlign: 'left' }}>Status</th>
-                        <th style={{ padding: '10px', textAlign: 'left' }}>Date</th>
-                        <th style={{ padding: '10px', textAlign: 'left' }}>Actions</th>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #eee' }}>
+                      <th style={{ padding: '10px', textAlign: 'left' }}>ID</th>
+                      <th style={{ padding: '10px', textAlign: 'left' }}>Listing</th>
+                      <th style={{ padding: '10px', textAlign: 'left' }}>Reporter</th>
+                      <th style={{ padding: '10px', textAlign: 'left' }}>Reason</th>
+                      <th style={{ padding: '10px', textAlign: 'left' }}>Status</th>
+                      <th style={{ padding: '10px', textAlign: 'left' }}>Reported At</th>
+                      <th style={{ padding: '10px', textAlign: 'left' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reports.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                          No reports submitted yet.
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {reports.map(report => (
+                    ) : (
+                      reports.map(report => (
                         <tr key={report.id} style={{ borderBottom: '1px solid #eee' }}>
                           <td style={{ padding: '10px' }}>{report.id}</td>
                           <td style={{ padding: '10px' }}>
-                            <div>
-                              <strong
-                                style={{ cursor: 'pointer', color: '#1976d2' }}
-                                onClick={() => navigate(`/product/${report.listing_id}`)}
+                            <div style={{ fontWeight: 600 }}>{report.listing_title || 'Listing unavailable'}</div>
+                            <div style={{ fontSize: '12px', color: '#777' }}>ID: {report.listing_id || '-'}</div>
+                          </td>
+                          <td style={{ padding: '10px' }}>
+                            <div>{report.reporter_name || 'Unknown user'}</div>
+                            <div style={{ fontSize: '12px', color: '#777' }}>{report.reporter_email || '-'}</div>
+                          </td>
+                          <td style={{ padding: '10px', maxWidth: '280px' }}>
+                            <span style={{ whiteSpace: 'pre-wrap' }}>{report.reason}</span>
+                          </td>
+                          <td style={{ padding: '10px' }}>
+                            <select
+                              value={report.status || 'pending'}
+                              onChange={(e) => handleReportStatusChange(report.id, e.target.value)}
+                              disabled={updatingReportId === report.id}
+                              style={{
+                                padding: '6px 10px',
+                                borderRadius: '6px',
+                                border: '1px solid #ddd',
+                                minWidth: '140px'
+                              }}
+                            >
+                              {REPORT_STATUSES.map(status => (
+                                <option key={status} value={status}>
+                                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td style={{ padding: '10px' }}>
+                            {new Date(report.created_at).toLocaleString()}
+                          </td>
+                          <td style={{ padding: '10px' }}>
+                            {report.listing_id && (
+                              <a
+                                href={`/product/${report.listing_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-secondary"
+                                style={{ fontSize: '12px', padding: '5px 10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                               >
-                                {report.listing_title || `Listing #${report.listing_id}`}
-                              </strong>
-                              <br />
-                              <small style={{ color: '#666' }}>
-                                Owner: {report.listing_owner_name || 'Unknown'}
-                              </small>
-                            </div>
-                          </td>
-                          <td style={{ padding: '10px' }}>
-                            {report.reporter_email || 'Anonymous'}
-                          </td>
-                          <td style={{ padding: '10px', maxWidth: '300px' }}>
-                            <div style={{ 
-                              whiteSpace: 'pre-wrap', 
-                              wordBreak: 'break-word',
-                              maxHeight: '100px',
-                              overflow: 'auto'
-                            }}>
-                              {report.reason}
-                            </div>
-                          </td>
-                          <td style={{ padding: '10px' }}>
-                            <span style={{
-                              padding: '4px 8px',
-                              borderRadius: '4px',
-                              fontSize: '12px',
-                              background: report.status === 'pending' ? '#fff3e0' : '#e8f5e9',
-                              color: report.status === 'pending' ? '#f57c00' : '#2e7d32'
-                            }}>
-                              {report.status}
-                            </span>
-                          </td>
-                          <td style={{ padding: '10px' }}>
-                            <div>
-                              {new Date(report.created_at).toLocaleDateString()}
-                              <br />
-                              <small style={{ color: '#666' }}>
-                                {new Date(report.created_at).toLocaleTimeString()}
-                              </small>
-                            </div>
-                          </td>
-                          <td style={{ padding: '10px' }}>
-                            {report.status === 'pending' && (
-                              <button
-                                onClick={() => handleResolveReport(report.id)}
-                                className="btn btn-primary"
-                                style={{ fontSize: '12px', padding: '5px 10px' }}
-                              >
-                                <FaCheck /> Resolve
-                              </button>
-                            )}
-                            {report.status === 'resolved' && report.resolved_at && (
-                              <small style={{ color: '#666' }}>
-                                Resolved: {new Date(report.resolved_at).toLocaleDateString()}
-                              </small>
+                                <FaEye /> View
+                              </a>
                             )}
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </>

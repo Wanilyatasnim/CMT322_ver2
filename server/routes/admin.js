@@ -3,6 +3,7 @@ const { query } = require('../config/database');
 const { verifyToken, isAdmin } = require('../config/auth');
 
 const router = express.Router();
+const REPORT_STATUSES = ['pending', 'reviewing', 'resolved', 'dismissed'];
 
 // Middleware to check admin access
 router.use(verifyToken, isAdmin);
@@ -83,7 +84,6 @@ router.get('/stats', async (req, res) => {
     const totalListings = await query.get('SELECT COUNT(*) as count FROM listings');
     const activeListings = await query.get("SELECT COUNT(*) as count FROM listings WHERE status = 'active'");
     const soldListings = await query.get("SELECT COUNT(*) as count FROM listings WHERE status = 'sold'");
-    const pendingReports = await query.get("SELECT COUNT(*) as count FROM reports WHERE status = 'pending'");
     
     // Debug: Log actual counts
     console.log(`[Admin Stats] Users: ${totalUsers.count}, Listings: ${totalListings.count}`);
@@ -92,43 +92,10 @@ router.get('/stats', async (req, res) => {
       totalUsers: totalUsers.count,
       totalListings: totalListings.count,
       activeListings: activeListings.count,
-      soldListings: soldListings.count,
-      pendingReports: pendingReports.count
+      soldListings: soldListings.count
     });
   } catch (error) {
     console.error('Get stats error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Get all reports
-router.get('/reports', async (req, res) => {
-  try {
-    const reports = await query.all(
-      `SELECT r.*, l.title as listing_title, l.user_id as listing_owner_id, 
-       u.name as listing_owner_name, u.email as listing_owner_email
-       FROM reports r
-       LEFT JOIN listings l ON r.listing_id = l.id
-       LEFT JOIN users u ON l.user_id = u.id
-       ORDER BY r.created_at DESC`
-    );
-    res.json(reports);
-  } catch (error) {
-    console.error('Get reports error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Mark report as resolved
-router.patch('/reports/:id/resolve', async (req, res) => {
-  try {
-    await query.run(
-      `UPDATE reports SET status = ?, resolved_at = CURRENT_TIMESTAMP WHERE id = ?`,
-      ['resolved', req.params.id]
-    );
-    res.json({ message: 'Report marked as resolved' });
-  } catch (error) {
-    console.error('Resolve report error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -143,6 +110,59 @@ router.patch('/listings/:id/approve', async (req, res) => {
     res.json({ message: 'Listing approved successfully' });
   } catch (error) {
     console.error('Approve listing error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get all user reports
+router.get('/reports', async (req, res) => {
+  try {
+    const reports = await query.all(
+      `SELECT 
+        r.id,
+        r.listing_id,
+        r.reporter_id,
+        COALESCE(r.reporter_name, u.name) as reporter_name,
+        COALESCE(r.reporter_email, u.email) as reporter_email,
+        r.reason,
+        r.status,
+        r.created_at,
+        l.title as listing_title,
+        l.status as listing_status
+       FROM reports r
+       LEFT JOIN listings l ON r.listing_id = l.id
+       LEFT JOIN users u ON r.reporter_id = u.id
+       ORDER BY r.created_at DESC`
+    );
+
+    res.json(reports);
+  } catch (error) {
+    console.error('Get reports error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Update report status
+router.patch('/reports/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (!REPORT_STATUSES.includes(status)) {
+      return res.status(400).json({ error: 'Invalid report status' });
+    }
+
+    const result = await query.run(
+      'UPDATE reports SET status = ? WHERE id = ?',
+      [status, req.params.id]
+    );
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+
+    res.json({ message: 'Report status updated' });
+  } catch (error) {
+    console.error('Update report status error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
