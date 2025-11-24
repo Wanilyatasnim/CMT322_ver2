@@ -13,14 +13,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Log all API requests for debugging
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/')) {
-    console.log(`[API] ${req.method} ${req.path}`);
-  }
-  next();
-});
-
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/listings', require('./routes/listings'));
@@ -37,11 +29,12 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Initialize database
-db.init().then(() => {
+db.init().then(async () => {
   console.log('Database initialized successfully');
   
   // Auto-seed sample data if database is empty (for Railway deployment)
-  seedDatabaseIfEmpty();
+  await seedDatabaseIfEmpty();
+  await replaceLegacyPlaceholderImages();
   
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
@@ -134,8 +127,7 @@ async function seedDatabaseIfEmpty() {
       
       if (user1Id && user2Id && user3Id) {
         // Sample listings (using actual user IDs)
-        // Using placeholder image URLs that work - users should upload their own images
-        const placeholderImage = 'https://via.placeholder.com/800x600/cccccc/666666?text=No+Image';
+        const placeholderImage = 'https://placehold.co/800x600/cccccc/666666?text=No+Image';
         const listingsData = [
           [user1Id, 'MacBook Pro 13 inch M1 Chip', 'Excellent condition MacBook Pro with M1 chip. 256GB SSD, 8GB RAM.', 3500.00, 'Electronics', 'Like New', 'Aman Damai Hostel', placeholderImage],
           [user2Id, 'IKEA Study Table with Drawer', 'Good quality study table with built-in drawer. White color.', 150.00, 'Furniture', 'Good', 'Ria Hostel', placeholderImage],
@@ -165,6 +157,29 @@ async function seedDatabaseIfEmpty() {
     console.log('✓ Database seeding check completed!');
   } catch (error) {
     console.error('Error seeding database:', error);
+  }
+}
+
+// Replace old placeholder filenames/URLs with working placeholder image
+async function replaceLegacyPlaceholderImages() {
+  try {
+    const { query } = require('./config/database');
+    const placeholderImage = 'https://placehold.co/800x600/cccccc/666666?text=No+Image';
+    const legacyFilenames = ['macbook.jpg', 'table.jpg', 'book.jpg', 'samsung.jpg', 'fridge.jpg', 'labcoat.jpg', 'airpods.jpg'];
+
+    for (const legacyName of legacyFilenames) {
+      await query.run(
+        'UPDATE listings SET images = ? WHERE images = ?',
+        [placeholderImage, legacyName]
+      );
+    }
+
+    await query.run(
+      'UPDATE listings SET images = ? WHERE images LIKE ?',
+      [placeholderImage, 'https://via.placeholder.com%']
+    );
+  } catch (error) {
+    console.error('Error normalizing placeholder images:', error);
   }
 }
 

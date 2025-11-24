@@ -28,6 +28,8 @@ const sampleUsers = [
   }
 ];
 
+const placeholderImage = 'https://placehold.co/800x600/cccccc/666666?text=No+Image';
+
 // Sample listings
 const sampleListings = [
   {
@@ -38,7 +40,7 @@ const sampleListings = [
     category: 'Electronics',
     condition: 'Like New',
     location: 'Aman Damai Hostel',
-    images: 'macbook.jpg',
+    images: placeholderImage,
     status: 'active',
     clicks: 15
   },
@@ -50,7 +52,7 @@ const sampleListings = [
     category: 'Furniture',
     condition: 'Good',
     location: 'Ria Hostel',
-    images: 'table.jpg',
+    images: placeholderImage,
     status: 'active',
     clicks: 8
   },
@@ -62,7 +64,7 @@ const sampleListings = [
     category: 'Books',
     condition: 'Good',
     location: 'Cahaya Gemilang Hostel',
-    images: 'book.jpg',
+    images: placeholderImage,
     status: 'active',
     clicks: 3
   },
@@ -74,7 +76,7 @@ const sampleListings = [
     category: 'Electronics',
     condition: 'Like New',
     location: 'Aman Damai Hostel',
-    images: 'samsung.jpg',
+    images: placeholderImage,
     status: 'active',
     clicks: 22
   },
@@ -86,7 +88,7 @@ const sampleListings = [
     category: 'Appliances',
     condition: 'Good',
     location: 'Ria Hostel',
-    images: 'fridge.jpg',
+    images: placeholderImage,
     status: 'active',
     clicks: 12
   },
@@ -98,7 +100,7 @@ const sampleListings = [
     category: 'Others',
     condition: 'Good',
     location: 'Cahaya Gemilang Hostel',
-    images: 'labcoat.jpg',
+    images: placeholderImage,
     status: 'active',
     clicks: 5
   },
@@ -110,7 +112,7 @@ const sampleListings = [
     category: 'Electronics',
     condition: 'Like New',
     location: 'Aman Damai Hostel',
-    images: 'airpods.jpg',
+    images: placeholderImage,
     status: 'active',
     clicks: 18
   }
