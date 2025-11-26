@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { usersAPI } from '../services/api';
 
-const inputIds = {
-  name: 'profile-name',
-  email: 'profile-email',
-  phone: 'profile-phone',
-  matricNumber: 'profile-matric'
-};
-
 const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -83,9 +76,8 @@ const Profile = () => {
         
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor={inputIds.name}>Full Name</label>
+            <label>Full Name</label>
             <input
-              id={inputIds.name}
               type="text"
               name="name"
               value={formData.name}
@@ -95,9 +87,8 @@ const Profile = () => {
           </div>
           
           <div className="form-group">
-            <label htmlFor={inputIds.email}>Email</label>
+            <label>Email</label>
             <input
-              id={inputIds.email}
               type="email"
               value={formData.email}
               disabled
@@ -109,9 +100,8 @@ const Profile = () => {
           </div>
           
           <div className="form-group">
-            <label htmlFor={inputIds.phone}>Phone Number</label>
+            <label>Phone Number</label>
             <input
-              id={inputIds.phone}
               type="tel"
               name="phone"
               value={formData.phone}
@@ -121,9 +111,8 @@ const Profile = () => {
           </div>
           
           <div className="form-group">
-            <label htmlFor={inputIds.matricNumber}>Matric Number</label>
+            <label>Matric Number</label>
             <input
-              id={inputIds.matricNumber}
               type="text"
               name="matricNumber"
               value={formData.matricNumber}

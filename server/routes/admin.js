@@ -1,6 +1,6 @@
 const express = require('express');
-const { query } = require('../config/database');
 const { verifyToken, isAdmin } = require('../config/auth');
+const dataStore = require('../data/dataStore');
 
 const router = express.Router();
 const REPORT_STATUSES = ['pending', 'reviewing', 'resolved', 'dismissed'];
@@ -9,15 +9,13 @@ const REPORT_STATUSES = ['pending', 'reviewing', 'resolved', 'dismissed'];
 router.use(verifyToken, isAdmin);
 
 // Get all users
-router.get('/users', async (req, res) => {
+router.get('/users', (req, res) => {
   try {
-    const users = await query.all(
-      'SELECT id, name, email, phone, matric_number, role, status, created_at FROM users ORDER BY id DESC'
-    );
-    
-    // Debug: Log user count and IDs
-    console.log(`[Admin] Returning ${users.length} users:`, users.map(u => `${u.id}:${u.email}`).join(', '));
-    
+    const users = dataStore
+      .getUsers()
+      .sort((a, b) => Number(b.id) - Number(a.id))
+      .map(({ password, ...rest }) => rest);
+
     res.json(users);
   } catch (error) {
     console.error('Get users error:', error);
@@ -26,11 +24,11 @@ router.get('/users', async (req, res) => {
 });
 
 // Get all listings
-router.get('/listings', async (req, res) => {
+router.get('/listings', (req, res) => {
   try {
-    const listings = await query.all(
-      'SELECT * FROM listings ORDER BY created_at DESC'
-    );
+    const listings = dataStore
+      .getListings()
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     res.json(listings);
   } catch (error) {
     console.error('Get listings error:', error);
@@ -39,9 +37,12 @@ router.get('/listings', async (req, res) => {
 });
 
 // Delete listing
-router.delete('/listings/:id', async (req, res) => {
+router.delete('/listings/:id', (req, res) => {
   try {
-    await query.run('DELETE FROM listings WHERE id = ?', [req.params.id]);
+    const deleted = dataStore.deleteListing(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
     res.json({ message: 'Listing deleted successfully' });
   } catch (error) {
     console.error('Delete listing error:', error);
@@ -50,12 +51,12 @@ router.delete('/listings/:id', async (req, res) => {
 });
 
 // Ban user
-router.patch('/users/:id/ban', async (req, res) => {
+router.patch('/users/:id/ban', (req, res) => {
   try {
-    await query.run(
-      'UPDATE users SET status = ? WHERE id = ?',
-      ['banned', req.params.id]
-    );
+    const updated = dataStore.updateUser(req.params.id, { status: 'banned' });
+    if (!updated) {
+      return res.status(404).json({ error: 'User not found' });
+    }
     res.json({ message: 'User banned successfully' });
   } catch (error) {
     console.error('Ban user error:', error);
@@ -64,12 +65,12 @@ router.patch('/users/:id/ban', async (req, res) => {
 });
 
 // Unban user
-router.patch('/users/:id/unban', async (req, res) => {
+router.patch('/users/:id/unban', (req, res) => {
   try {
-    await query.run(
-      'UPDATE users SET status = ? WHERE id = ?',
-      ['active', req.params.id]
-    );
+    const updated = dataStore.updateUser(req.params.id, { status: 'active' });
+    if (!updated) {
+      return res.status(404).json({ error: 'User not found' });
+    }
     res.json({ message: 'User unbanned successfully' });
   } catch (error) {
     console.error('Unban user error:', error);
@@ -78,22 +79,10 @@ router.patch('/users/:id/unban', async (req, res) => {
 });
 
 // Get dashboard stats
-router.get('/stats', async (req, res) => {
+router.get('/stats', (req, res) => {
   try {
-    const totalUsers = await query.get('SELECT COUNT(*) as count FROM users');
-    const totalListings = await query.get('SELECT COUNT(*) as count FROM listings');
-    const activeListings = await query.get("SELECT COUNT(*) as count FROM listings WHERE status = 'active'");
-    const soldListings = await query.get("SELECT COUNT(*) as count FROM listings WHERE status = 'sold'");
-    
-    // Debug: Log actual counts
-    console.log(`[Admin Stats] Users: ${totalUsers.count}, Listings: ${totalListings.count}`);
-    
-    res.json({
-      totalUsers: totalUsers.count,
-      totalListings: totalListings.count,
-      activeListings: activeListings.count,
-      soldListings: soldListings.count
-    });
+    const stats = dataStore.getStats();
+    res.json(stats);
   } catch (error) {
     console.error('Get stats error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -101,12 +90,12 @@ router.get('/stats', async (req, res) => {
 });
 
 // Approve listing (can be extended for approval workflow)
-router.patch('/listings/:id/approve', async (req, res) => {
+router.patch('/listings/:id/approve', (req, res) => {
   try {
-    await query.run(
-      'UPDATE listings SET status = ? WHERE id = ?',
-      ['active', req.params.id]
-    );
+    const listing = dataStore.markListingStatus(req.params.id, 'active');
+    if (!listing) {
+      return res.status(404).json({ error: 'Listing not found' });
+    }
     res.json({ message: 'Listing approved successfully' });
   } catch (error) {
     console.error('Approve listing error:', error);
@@ -115,27 +104,25 @@ router.patch('/listings/:id/approve', async (req, res) => {
 });
 
 // Get all user reports
-router.get('/reports', async (req, res) => {
+router.get('/reports', (req, res) => {
   try {
-    const reports = await query.all(
-      `SELECT 
-        r.id,
-        r.listing_id,
-        r.reporter_id,
-        COALESCE(r.reporter_name, u.name) as reporter_name,
-        COALESCE(r.reporter_email, u.email) as reporter_email,
-        r.reason,
-        r.status,
-        r.created_at,
-        l.title as listing_title,
-        l.status as listing_status
-       FROM reports r
-       LEFT JOIN listings l ON r.listing_id = l.id
-       LEFT JOIN users u ON r.reporter_id = u.id
-       ORDER BY r.created_at DESC`
-    );
+    const reports = dataStore.getReports();
+    const listings = dataStore.getListings();
+    const users = dataStore.getUsers();
 
-    res.json(reports);
+    const enriched = reports.map(report => {
+      const listing = listings.find(item => Number(item.id) === Number(report.listing_id));
+      const reporter = users.find(user => Number(user.id) === Number(report.reporter_id));
+      return {
+        ...report,
+        reporter_name: report.reporter_name || reporter?.name || null,
+        reporter_email: report.reporter_email || reporter?.email || null,
+        listing_title: listing?.title || null,
+        listing_status: listing?.status || null
+      };
+    });
+
+    res.json(enriched);
   } catch (error) {
     console.error('Get reports error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -143,7 +130,7 @@ router.get('/reports', async (req, res) => {
 });
 
 // Update report status
-router.patch('/reports/:id/status', async (req, res) => {
+router.patch('/reports/:id/status', (req, res) => {
   try {
     const { status } = req.body;
 
@@ -151,12 +138,9 @@ router.patch('/reports/:id/status', async (req, res) => {
       return res.status(400).json({ error: 'Invalid report status' });
     }
 
-    const result = await query.run(
-      'UPDATE reports SET status = ? WHERE id = ?',
-      [status, req.params.id]
-    );
+    const updated = dataStore.updateReportStatus(req.params.id, status);
 
-    if (result.changes === 0) {
+    if (!updated) {
       return res.status(404).json({ error: 'Report not found' });
     }
 
@@ -168,13 +152,11 @@ router.patch('/reports/:id/status', async (req, res) => {
 });
 
 // Debug endpoint: Get all users with full details (including password hash for verification)
-router.get('/debug/users', async (req, res) => {
+router.get('/debug/users', (req, res) => {
   try {
-    const users = await query.all('SELECT * FROM users ORDER BY id');
-    const count = await query.get('SELECT COUNT(*) as count FROM users');
-    
+    const users = dataStore.getUsers();
     res.json({
-      totalCount: count.count,
+      totalCount: users.length,
       users: users.map(u => ({
         id: u.id,
         name: u.name,

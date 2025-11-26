@@ -127,4 +127,4 @@ To verify all modules work correctly:
 ## ✅ Conclusion
 **All MVP modules are 100% complete and functional!** 
 
-The application is ready for deployment and testing. Railway deployment is configured and the database auto-seeds with sample data on each deployment.
+The application is ready for deployment and testing. Railway deployment is configured and the lightweight JSON data store auto-seeds with sample data on each deployment.

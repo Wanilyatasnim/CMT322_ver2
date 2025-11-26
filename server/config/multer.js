@@ -28,8 +28,7 @@ if (hasCloudinaryConfig) {
       }
     });
     
-    console.log('[Multer] ✅ Using Cloudinary for image storage');
-    console.log('[Multer] Cloudinary folder: 2street-listings');
+    console.log('[Multer] Using Cloudinary for image storage');
   } catch (error) {
     console.error('[Multer] Cloudinary setup failed, falling back to local storage:', error.message);
     hasCloudinaryConfig = false;
@@ -53,12 +52,9 @@ if (!hasCloudinaryConfig) {
     }
   });
   
-  console.log('[Multer] ⚠️ Using local storage (uploads/ directory)');
-  console.warn('[Multer] ⚠️ WARNING: Local storage is ephemeral on Railway. Images will be lost on redeploy.');
-  console.warn('[Multer] ⚠️ To fix this, set these environment variables in Railway:');
-  console.warn('[Multer]    - CLOUDINARY_CLOUD_NAME');
-  console.warn('[Multer]    - CLOUDINARY_API_KEY');
-  console.warn('[Multer]    - CLOUDINARY_API_SECRET');
+  console.log('[Multer] Using local storage (uploads/ directory)');
+  console.warn('[Multer] WARNING: Local storage is ephemeral on Railway. Images will be lost on redeploy.');
+  console.warn('[Multer] To fix this, set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.');
 }
 
 const fileFilter = (req, file, cb) => {

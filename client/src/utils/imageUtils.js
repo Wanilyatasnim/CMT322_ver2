@@ -1,7 +1,7 @@
 /**
  * Get the full image URL
  * Handles both Cloudinary URLs (full URLs) and local filenames
- * @param {string} imagePath - Image path from database (could be URL or filename)
+ * @param {string} imagePath - Image path from the data store (could be URL or filename)
  * @returns {string} Full image URL
  */
 export const getImageUrl = (imagePath) => {
@@ -15,4 +15,10 @@ export const getImageUrl = (imagePath) => {
   // Otherwise, it's a local filename, prepend the uploads path
   return `${process.env.REACT_APP_API_URL || ''}/uploads/${imagePath}`;
 };
+
+
+
+
+
+
 

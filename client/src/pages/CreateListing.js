@@ -5,16 +5,6 @@ import { listingsAPI } from '../services/api';
 const CATEGORIES = ['Electronics', 'Furniture', 'Books', 'Appliances', 'Others'];
 const CONDITIONS = ['New', 'Like New', 'Good', 'Fair'];
 
-const inputIds = {
-  title: 'create-title',
-  description: 'create-description',
-  price: 'create-price',
-  category: 'create-category',
-  condition: 'create-condition',
-  location: 'create-location',
-  images: 'create-images'
-};
-
 const CreateListing = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -93,9 +83,8 @@ const CreateListing = () => {
         
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor={inputIds.title}>Title *</label>
+            <label>Title *</label>
             <input
-              id={inputIds.title}
               type="text"
               name="title"
               value={formData.title}
@@ -106,9 +95,8 @@ const CreateListing = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor={inputIds.description}>Description *</label>
+            <label>Description *</label>
             <textarea
-              id={inputIds.description}
               name="description"
               value={formData.description}
               onChange={handleChange}
@@ -119,9 +107,8 @@ const CreateListing = () => {
 
           <div className="form-grid">
             <div className="form-group">
-              <label htmlFor={inputIds.price}>Price (RM) *</label>
+              <label>Price (RM) *</label>
               <input
-                id={inputIds.price}
                 type="number"
                 name="price"
                 value={formData.price}
@@ -134,9 +121,8 @@ const CreateListing = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor={inputIds.category}>Category *</label>
+              <label>Category *</label>
               <select
-                id={inputIds.category}
                 name="category"
                 value={formData.category}
                 onChange={handleChange}
@@ -151,9 +137,8 @@ const CreateListing = () => {
 
           <div className="form-grid">
             <div className="form-group">
-              <label htmlFor={inputIds.condition}>Condition *</label>
+              <label>Condition *</label>
               <select
-                id={inputIds.condition}
                 name="condition"
                 value={formData.condition}
                 onChange={handleChange}
@@ -166,9 +151,8 @@ const CreateListing = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor={inputIds.location}>Location/Hostel</label>
+              <label>Location/Hostel</label>
               <input
-                id={inputIds.location}
                 type="text"
                 name="location"
                 value={formData.location}
@@ -179,9 +163,8 @@ const CreateListing = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor={inputIds.images}>Images (up to 3) *</label>
+            <label>Images (up to 3) *</label>
             <input
-              id={inputIds.images}
               type="file"
               accept="image/*"
               multiple

@@ -2,15 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const inputIds = {
-  name: 'register-name',
-  email: 'register-email',
-  password: 'register-password',
-  confirmPassword: 'register-confirm-password',
-  phone: 'register-phone',
-  matricNumber: 'register-matric'
-};
-
 const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -69,9 +60,8 @@ const Register = () => {
         
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor={inputIds.name}>Full Name</label>
+            <label>Full Name</label>
             <input
-              id={inputIds.name}
               type="text"
               name="name"
               value={formData.name}
@@ -81,9 +71,8 @@ const Register = () => {
           </div>
           
           <div className="form-group">
-            <label htmlFor={inputIds.email}>USM Student Email</label>
+            <label>USM Student Email</label>
             <input
-              id={inputIds.email}
               type="email"
               name="email"
               value={formData.email}
@@ -95,9 +84,8 @@ const Register = () => {
           
           <div className="form-grid">
             <div className="form-group">
-              <label htmlFor={inputIds.password}>Password</label>
+              <label>Password</label>
               <input
-                id={inputIds.password}
                 type="password"
                 name="password"
                 value={formData.password}
@@ -107,9 +95,8 @@ const Register = () => {
             </div>
             
             <div className="form-group">
-              <label htmlFor={inputIds.confirmPassword}>Confirm Password</label>
+              <label>Confirm Password</label>
               <input
-                id={inputIds.confirmPassword}
                 type="password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
@@ -121,9 +108,8 @@ const Register = () => {
           
           <div className="form-grid">
             <div className="form-group">
-              <label htmlFor={inputIds.phone}>Phone Number (Optional)</label>
+              <label>Phone Number (Optional)</label>
               <input
-                id={inputIds.phone}
                 type="tel"
                 name="phone"
                 value={formData.phone}
@@ -132,9 +118,8 @@ const Register = () => {
             </div>
             
             <div className="form-group">
-              <label htmlFor={inputIds.matricNumber}>Matric Number (Optional)</label>
+              <label>Matric Number (Optional)</label>
               <input
-                id={inputIds.matricNumber}
                 type="text"
                 name="matricNumber"
                 value={formData.matricNumber}

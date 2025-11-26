@@ -75,3 +75,9 @@ Cloudinary's free tier includes:
 
 **Old images** (uploaded before Cloudinary setup) will still use the `/uploads/` path and may be broken if they were on Railway. **New images** uploaded after setup will use Cloudinary URLs and persist permanently.
 
+
+
+
+
+
+

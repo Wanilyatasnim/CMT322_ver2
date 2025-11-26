@@ -1,71 +1,70 @@
 const express = require('express');
 const multer = require('../config/multer');
-const { query } = require('../config/database');
 const { verifyToken } = require('../config/auth');
+const dataStore = require('../data/dataStore');
 
 const router = express.Router();
 
 // Get all listings with search and filters
-router.get('/', async (req, res) => {
+router.get('/', (req, res) => {
   try {
-    let sql = 'SELECT * FROM listings WHERE status = ?';
-    const params = ['active'];
+    const {
+      search,
+      category,
+      condition,
+      location,
+      minPrice,
+      maxPrice,
+      sortBy = 'newest'
+    } = req.query;
 
-    // Search by keyword
-    if (req.query.search) {
-      sql += ' AND (title LIKE ? OR description LIKE ?)';
-      const searchTerm = `%${req.query.search}%`;
-      params.push(searchTerm, searchTerm);
+    let listings = dataStore.getListings().filter(listing => listing.status === 'active');
+
+    if (search) {
+      const keyword = search.toLowerCase();
+      listings = listings.filter(
+        listing =>
+          listing.title.toLowerCase().includes(keyword) ||
+          listing.description.toLowerCase().includes(keyword)
+      );
     }
 
-    // Filter by category
-    if (req.query.category) {
-      sql += ' AND category = ?';
-      params.push(req.query.category);
+    if (category) {
+      listings = listings.filter(listing => listing.category === category);
     }
 
-    // Filter by condition
-    if (req.query.condition) {
-      sql += ' AND condition = ?';
-      params.push(req.query.condition);
+    if (condition) {
+      listings = listings.filter(listing => listing.condition === condition);
     }
 
-    // Filter by location
-    if (req.query.location) {
-      sql += ' AND location LIKE ?';
-      params.push(`%${req.query.location}%`);
+    if (location) {
+      const locationTerm = location.toLowerCase();
+      listings = listings.filter(
+        listing => listing.location && listing.location.toLowerCase().includes(locationTerm)
+      );
     }
 
-    // Filter by price range
-    if (req.query.minPrice) {
-      sql += ' AND price >= ?';
-      params.push(req.query.minPrice);
+    if (minPrice) {
+      listings = listings.filter(listing => listing.price >= Number(minPrice));
     }
-    if (req.query.maxPrice) {
-      sql += ' AND price <= ?';
-      params.push(req.query.maxPrice);
+    if (maxPrice) {
+      listings = listings.filter(listing => listing.price <= Number(maxPrice));
     }
 
-    // Sorting
-    const sortBy = req.query.sortBy || 'newest';
-    switch (sortBy) {
-      case 'newest':
-        sql += ' ORDER BY created_at DESC';
-        break;
-      case 'oldest':
-        sql += ' ORDER BY created_at ASC';
-        break;
-      case 'price-low':
-        sql += ' ORDER BY price ASC';
-        break;
-      case 'price-high':
-        sql += ' ORDER BY price DESC';
-        break;
-      default:
-        sql += ' ORDER BY created_at DESC';
-    }
+    listings.sort((a, b) => {
+      switch (sortBy) {
+        case 'oldest':
+          return new Date(a.created_at) - new Date(b.created_at);
+        case 'price-low':
+          return a.price - b.price;
+        case 'price-high':
+          return b.price - a.price;
+        case 'newest':
+        default:
+          return new Date(b.created_at) - new Date(a.created_at);
+      }
+    });
 
-    const listings = await query.all(sql, params);
     res.json(listings);
   } catch (error) {
     console.error('Get listings error:', error);
@@ -74,24 +73,16 @@ router.get('/', async (req, res) => {
 });
 
 // Get single listing
-router.get('/:id', async (req, res) => {
+router.get('/:id', (req, res) => {
   try {
-    const listing = await query.get(
-      'SELECT * FROM listings WHERE id = ?',
-      [req.params.id]
-    );
+    const listing = dataStore.getListingById(req.params.id);
 
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' });
     }
 
-    // Increment click counter
-    await query.run(
-      'UPDATE listings SET clicks = clicks + 1 WHERE id = ?',
-      [req.params.id]
-    );
-
-    res.json({ ...listing, clicks: listing.clicks + 1 });
+    const updated = dataStore.incrementListingClicks(listing.id) || listing;
+    res.json(updated);
   } catch (error) {
     console.error('Get listing error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -99,7 +90,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create listing
-router.post('/', verifyToken, multer.array('images', 3), async (req, res) => {
+router.post('/', verifyToken, multer.array('images', 3), (req, res) => {
   try {
     const { title, description, price, category, condition, location } = req.body;
 
@@ -111,18 +102,22 @@ router.post('/', verifyToken, multer.array('images', 3), async (req, res) => {
       return res.status(400).json({ error: 'Please upload at least one image' });
     }
 
-    // Cloudinary returns file.path (URL) instead of file.filename
-    const images = req.files.map(file => file.path).join(',');
+    const images = req.files.map(file => file.path || file.filename).join(',');
 
-    const result = await query.run(
-      `INSERT INTO listings (user_id, title, description, price, category, condition, location, images) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [req.user.userId, title, description, price, category, condition, location || null, images]
-    );
+    const newListing = dataStore.createListing({
+      user_id: req.user.userId,
+      title,
+      description,
+      price,
+      category,
+      condition,
+      location,
+      images
+    });
 
     res.status(201).json({
       message: 'Listing created successfully',
-      id: result.id
+      id: newListing.id
     });
   } catch (error) {
     console.error('Create listing error:', error);
@@ -131,44 +126,39 @@ router.post('/', verifyToken, multer.array('images', 3), async (req, res) => {
 });
 
 // Update listing
-router.put('/:id', verifyToken, multer.array('images', 3), async (req, res) => {
+router.put('/:id', verifyToken, multer.array('images', 3), (req, res) => {
   try {
-    const listing = await query.get(
-      'SELECT * FROM listings WHERE id = ?',
-      [req.params.id]
-    );
+    const listing = dataStore.getListingById(req.params.id);
 
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' });
     }
 
-    if (listing.user_id !== req.user.userId) {
+    if (Number(listing.user_id) !== Number(req.user.userId)) {
       return res.status(403).json({ error: 'Not authorized to edit this listing' });
     }
 
     const { title, description, price, category, condition, location, existingImages } = req.body;
-    let images = '';
-    
-    // Combine existing images (if provided) with new images
-    const existingImagesArray = existingImages ? existingImages.split(',').filter(img => img.trim()) : [];
-    // Cloudinary returns file.path (URL), local storage returns file.filename
-    const newImagesArray = req.files && req.files.length > 0 ? req.files.map(file => file.path || file.filename) : [];
-    
-    // Merge existing and new images
-    const allImages = [...existingImagesArray, ...newImagesArray];
-    
-    // If no images at all, keep the original
-    if (allImages.length === 0) {
-      images = listing.images;
-    } else {
-      images = allImages.join(',');
-    }
 
-    await query.run(
-      `UPDATE listings SET title = ?, description = ?, price = ?, category = ?, 
-       condition = ?, location = ?, images = ? WHERE id = ?`,
-      [title, description, price, category, condition, location, images, req.params.id]
-    );
+    const existingImagesArray = existingImages
+      ? existingImages.split(',').filter(img => img.trim())
+      : [];
+    const newImagesArray =
+      req.files && req.files.length > 0
+        ? req.files.map(file => file.path || file.filename)
+        : [];
+    const allImages = [...existingImagesArray, ...newImagesArray];
+    const images = allImages.length > 0 ? allImages.join(',') : listing.images;
+
+    dataStore.updateListing(req.params.id, {
+      title,
+      description,
+      price,
+      category,
+      condition,
+      location,
+      images
+    });
 
     res.json({ message: 'Listing updated successfully' });
   } catch (error) {
@@ -178,22 +168,19 @@ router.put('/:id', verifyToken, multer.array('images', 3), async (req, res) => {
 });
 
 // Delete listing
-router.delete('/:id', verifyToken, async (req, res) => {
+router.delete('/:id', verifyToken, (req, res) => {
   try {
-    const listing = await query.get(
-      'SELECT * FROM listings WHERE id = ?',
-      [req.params.id]
-    );
+    const listing = dataStore.getListingById(req.params.id);
 
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' });
     }
 
-    if (listing.user_id !== req.user.userId) {
+    if (Number(listing.user_id) !== Number(req.user.userId)) {
       return res.status(403).json({ error: 'Not authorized to delete this listing' });
     }
 
-    await query.run('DELETE FROM listings WHERE id = ?', [req.params.id]);
+    dataStore.deleteListing(req.params.id);
 
     res.json({ message: 'Listing deleted successfully' });
   } catch (error) {
@@ -203,25 +190,19 @@ router.delete('/:id', verifyToken, async (req, res) => {
 });
 
 // Mark as sold
-router.patch('/:id/sold', verifyToken, async (req, res) => {
+router.patch('/:id/sold', verifyToken, (req, res) => {
   try {
-    const listing = await query.get(
-      'SELECT * FROM listings WHERE id = ?',
-      [req.params.id]
-    );
+    const listing = dataStore.getListingById(req.params.id);
 
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' });
     }
 
-    if (listing.user_id !== req.user.userId) {
+    if (Number(listing.user_id) !== Number(req.user.userId)) {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    await query.run(
-      'UPDATE listings SET status = ? WHERE id = ?',
-      ['sold', req.params.id]
-    );
+    dataStore.markListingStatus(req.params.id, 'sold');
 
     res.json({ message: 'Listing marked as sold' });
   } catch (error) {
@@ -231,23 +212,25 @@ router.patch('/:id/sold', verifyToken, async (req, res) => {
 });
 
 // Get seller's other listings
-router.get('/:id/seller-listings', async (req, res) => {
+router.get('/:id/seller-listings', (req, res) => {
   try {
-    const listing = await query.get(
-      'SELECT user_id FROM listings WHERE id = ?',
-      [req.params.id]
-    );
+    const listing = dataStore.getListingById(req.params.id);
 
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' });
     }
 
-    const otherListings = await query.all(
-      `SELECT * FROM listings WHERE user_id = ? AND id != ? AND status = ? ORDER BY created_at DESC LIMIT 6`,
-      [listing.user_id, req.params.id, 'active']
-    );
+    const others = dataStore
+      .getListings()
+      .filter(
+        item =>
+          Number(item.user_id) === Number(listing.user_id) &&
+          Number(item.id) !== Number(listing.id) &&
+          item.status === 'active'
+      )
+      .slice(0, 6);
 
-    res.json(otherListings);
+    res.json(others);
   } catch (error) {
     console.error('Get seller listings error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -255,7 +238,7 @@ router.get('/:id/seller-listings', async (req, res) => {
 });
 
 // Report listing
-router.post('/:id/report', verifyToken, async (req, res) => {
+router.post('/:id/report', verifyToken, (req, res) => {
   try {
     const { reason } = req.body;
 
@@ -263,31 +246,21 @@ router.post('/:id/report', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'Please provide a reason for reporting.' });
     }
 
-    const listing = await query.get(
-      'SELECT id, title FROM listings WHERE id = ?',
-      [req.params.id]
-    );
+    const listing = dataStore.getListingById(req.params.id);
 
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' });
     }
 
-    const reporter = await query.get(
-      'SELECT name, email FROM users WHERE id = ?',
-      [req.user.userId]
-    );
+    const reporter = dataStore.getUserById(req.user.userId);
 
-    await query.run(
-      `INSERT INTO reports (listing_id, reporter_id, reporter_name, reporter_email, reason)
-       VALUES (?, ?, ?, ?, ?)`,
-      [
-        listing.id,
-        req.user.userId,
-        reporter?.name || null,
-        reporter?.email || null,
-        reason.trim()
-      ]
-    );
+    dataStore.createReport({
+      listing_id: listing.id,
+      reporter_id: req.user.userId,
+      reporter_name: reporter?.name,
+      reporter_email: reporter?.email,
+      reason: reason.trim()
+    });
 
     res.status(201).json({ message: 'Report submitted successfully' });
   } catch (error) {

@@ -24,7 +24,7 @@ A simple platform for USM students to buy and sell secondhand items within the c
 
 - **Frontend**: React.js with React Router
 - **Backend**: Node.js with Express
-- **Database**: SQLite
+- **Data Store**: Lightweight JSON file (no external database required)
 - **Authentication**: JWT (JSON Web Tokens)
 - **Image Storage**: Local file system with Multer
 
@@ -87,11 +87,16 @@ npm run client
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:5000
 
-## Default Admin Credentials
+## Default Accounts
 
-For testing purposes, an admin account is created automatically:
-- **Email**: admin@2street.usm.my
-- **Password**: admin123
+The app ships with two ready-to-use accounts that are stored inside `server/data/data.json` (the file is auto-created on first run):
+
+| Role   | Email                       | Password |
+|--------|-----------------------------|----------|
+| Admin  | `admin@2street.usm.my`      | `admin123` |
+| User   | `student@2street.usm.my`    | `user123`  |
+
+You can continue registering additional USM student accounts via the UI—everything is stored in the same JSON file so no external DB setup is required.
 
 ## Usage
 
@@ -125,11 +130,11 @@ test/
 │   │   └── App.js
 │   └── package.json
 ├── server/                 # Express backend
-│   ├── config/             # Database, auth, multer config
+│   ├── config/             # Auth + multer config
+│   ├── data/               # Local JSON data store
 │   ├── routes/             # API routes
 │   └── index.js
 ├── uploads/                # Image uploads directory
-├── 2street.db             # SQLite database
 ├── package.json
 └── README.md
 ```
@@ -171,7 +176,6 @@ test/
 - Password hashing with bcrypt
 - Input validation
 - File upload restrictions
-- SQL injection protection
 - Role-based access control
 - USM email domain validation
 

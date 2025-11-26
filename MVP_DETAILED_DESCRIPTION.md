@@ -95,7 +95,7 @@
 
 ### Delete Listing
 - ✅ **Confirmation Dialog**: Prevents accidental deletion
-- ✅ **Permanent Deletion**: Removes listing from database
+- ✅ **Permanent Deletion**: Removes listing from the data store
 - ✅ **UI Update**: Listing removed from list immediately after deletion
 
 ### Mark as Sold
@@ -259,7 +259,7 @@
 - ✅ **Admin Credentials**:
   - Email: `admin@2street.usm.my`
   - Password: `admin123`
-- ✅ **Admin Role**: Separate role in database
+- ✅ **Admin Role**: Separate role stored in the data layer
 - ✅ **Admin Login**: Same login page, different privileges
 - ✅ **Restricted Access**: Admin-only routes protected
 
@@ -298,7 +298,7 @@
   - Status (active/sold)
   - User ID (seller)
 - ✅ **Admin Actions**:
-  - Delete Listing: Removes listing from database
+  - Delete Listing: Removes listing from the data store
 - ✅ **Confirmation**: Dialog before deletion
 - ✅ **Status Indicators**: Color-coded status badges
 
@@ -322,44 +322,45 @@
 ### Backend Technology
 - ✅ **Node.js**: JavaScript runtime
 - ✅ **Express.js**: Web framework
-- ✅ **SQLite**: Lightweight database
+- ✅ **Local JSON data store**: Lightweight persistence layer
 - ✅ **JWT**: JSON Web Tokens for authentication
 - ✅ **Bcrypt**: Password hashing
 - ✅ **Multer**: File upload handling
 - ✅ **CORS**: Cross-origin resource sharing enabled
 
-### Database
-- ✅ **Users Table**:
-  - ID (auto-increment)
-  - Name
-  - Email (unique)
-  - Password (hashed)
-  - Phone
-  - Matric Number
-  - Role (user/admin)
-  - Status (active/banned)
-  - Created At timestamp
-- ✅ **Listings Table**:
-  - ID (auto-increment)
-  - User ID (foreign key)
-  - Title
-  - Description
-  - Price
-  - Category
-  - Condition
-  - Location
-  - Images (comma-separated filenames)
-  - Status (active/sold)
-  - Clicks (view counter)
-  - Created At timestamp
-- ✅ **Auto-Initialization**: Database created automatically on first run
+### Data Store
+- ✅ **Users Collection**:
+  - id (auto-increment)
+  - name
+  - email (unique)
+  - password (hashed)
+  - phone
+  - matric_number
+  - role (user/admin)
+  - status (active/banned)
+  - created_at timestamp
+- ✅ **Listings Collection**:
+  - id (auto-increment)
+  - user_id (seller reference)
+  - title
+  - description
+  - price
+  - category
+  - condition
+  - location
+  - images (comma-separated URLs)
+  - status (active/sold)
+  - clicks (view counter)
+  - created_at timestamp
+- ✅ **Reports Collection**: Stores listing reports with reporter info + status
+- ✅ **Auto-Initialization**: JSON file created automatically on first run
 - ✅ **Auto-Seeding**: Sample data added on deployment
 
 ### Security Features
 - ✅ **Password Hashing**: Bcrypt with 10 rounds
 - ✅ **JWT Authentication**: Secure token-based auth
 - ✅ **Email Validation**: USM email domain restriction
-- ✅ **SQL Injection Protection**: Parameterized queries
+- ✅ **Input Validation**: Sanitizes payloads before persistence
 - ✅ **File Upload Validation**: Only image files accepted
 - ✅ **File Size Limits**: 5MB maximum per image
 - ✅ **Role-Based Access Control**: Admin and user roles
@@ -405,7 +406,7 @@
 - ✅ **Railway Deployment**: Configured for cloud hosting
 - ✅ **Auto-Deploy**: Automatic deployment on git push
 - ✅ **Environment Variables**: Configurable via Railway dashboard
-- ✅ **Database Seeding**: Auto-seeds sample data on deployment
+- ✅ **Data Seeding**: Auto-seeds sample data on deployment
 - ✅ **Build Configuration**: Automated build process
 
 ---

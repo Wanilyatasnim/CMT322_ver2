@@ -147,11 +147,11 @@ Open your browser and go to http://localhost:3000
 
 ### Troubleshooting
 
-#### Database Issues
-If you see database errors:
-1. Delete the `2street.db` file
+#### Data File Issues
+If you want to reset all data or encounter corrupted records:
+1. Delete the `server/data/data.json` file
 2. Restart the server
-3. The database will be recreated automatically
+3. The file will be recreated automatically with default accounts/listings
 
 #### Port Already in Use
 If port 5000 or 3000 is already in use:
@@ -195,9 +195,9 @@ After successful setup:
 
 4. **Deploy**: When ready for production:
    - Build frontend: `cd client && npm run build`
-   - Deploy backend to a server
-   - Set proper environment variables
-   - Use a production database (PostgreSQL/MySQL)
+   - Deploy backend to a server (e.g., Railway)
+   - Set proper environment variables (including Cloudinary if desired)
+   - Add a persistent data solution (Cloudinary for images + external DB/volume) if you need data to survive redeploys
 
 ### Support Files
 

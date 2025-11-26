@@ -6,4 +6,5 @@ client/node_modules/
 *.db
 *.log
 .DS_Store
+server/data/data.json
 

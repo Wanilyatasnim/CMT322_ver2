@@ -34,8 +34,9 @@ test/
 ├── server/                         # Express Backend
 │   ├── config/
 │   │   ├── auth.js                # JWT authentication
-│   │   ├── database.js            # Database configuration
 │   │   └── multer.js              # File upload config
+│   ├── data/
+│   │   └── dataStore.js           # Lightweight JSON data layer
 │   ├── routes/
 │   │   ├── admin.js               # Admin routes
 │   │   ├── auth.js                # Authentication routes
@@ -49,7 +50,6 @@ test/
 ├── .gitignore                     # Git ignore rules
 ├── .env                           # Environment variables (create manually)
 ├── package.json                   # Backend dependencies
-├── 2street.db                     # SQLite database (auto-created)
 ├── GETTING_STARTED.md             # Quick start guide
 ├── PROJECT_STRUCTURE.md           # This file
 └── README.md                      # Main documentation
@@ -86,8 +86,10 @@ test/
 
 #### Configuration
 - **auth.js**: JWT token generation and verification
-- **database.js**: SQLite database initialization and queries
 - **multer.js**: File upload configuration for images
+
+#### Data Store
+- **dataStore.js**: Handles reading/writing the local JSON file, seeds default admin & sample data, and exposes helpers for users/listings/reports.
 
 #### Routes
 - **auth.js**: POST /register, POST /login, GET /me
@@ -98,20 +100,17 @@ test/
 #### Entry Point
 - **index.js**: Express server setup and route mounting
 
-### Database Schema
-
-#### Users Table
-- id, name, email, password, phone, matric_number, role, status, created_at
-
-#### Listings Table
-- id, user_id, title, description, price, category, condition, location, images, status, clicks, created_at
+### Data Schema (JSON)
+- `users`: id, name, email, password hash, phone, matric_number, role, status, created_at
+- `listings`: id, user_id, title, description, price, category, condition, location, images, status, clicks, created_at
+- `reports`: id, listing_id, reporter_id, reporter_name, reporter_email, reason, status, created_at
 
 ## API Flow
 
 1. **Frontend** makes HTTP request via `api.js`
 2. **Backend** receives request in `routes/`
 3. **Middleware** verifies authentication (if required)
-4. **Database** query/update via `database.js`
+4. **Data store** read/write handled via `dataStore.js`
 5. **Response** sent back to frontend
 6. **React** updates UI with new data
 
@@ -129,9 +128,9 @@ test/
 1. User selects images in frontend
 2. FormData created with images
 3. POST to `/api/listings` with multipart/form-data
-4. Multer middleware saves files to `uploads/` directory
-5. Filenames stored in database
-6. Frontend displays images via `/uploads/` static route
+4. Multer middleware saves files to `uploads/` (or uploads to Cloudinary if env vars exist)
+5. File URLs are saved in the JSON data store
+6. Frontend displays images via `/uploads/` static route or Cloudinary links
 
 ## Security Features
 
@@ -139,7 +138,7 @@ test/
 - JWT token-based authentication
 - Role-based access control (user/admin)
 - USM email domain validation
-- SQL injection protection via parameterized queries
+- Input validation to prevent malicious payloads
 - File upload restrictions (images only, max 5MB)
 
 ## Data Flow Examples
@@ -148,8 +147,8 @@ test/
 1. User fills form in `CreateListing.js`
 2. FormData created with images
 3. POST to `/api/listings` with auth token
-4. Multer saves images to `uploads/`
-5. Database stores listing with image filenames
+4. Multer saves images to `uploads/` (or Cloudinary)
+5. Data store saves listing metadata with image paths
 6. User redirected to `/my-listings`
 
 ### Viewing Product Details
@@ -165,7 +164,7 @@ test/
 2. Accesses `/admin` route
 3. Views all users and listings
 4. Can ban users or delete listings
-5. Actions logged in database
+5. Actions immediately persisted to the JSON data store
 
 ## Environment Variables
 
@@ -176,10 +175,10 @@ JWT_SECRET=your_secret_key
 NODE_ENV=development
 ```
 
-## Database File
+## Data Persistence
 
-SQLite database `2street.db` is auto-created on first server start. The database includes:
-- Schema initialization
-- Default admin user creation
-- Indexes for performance
+`server/data/data.json` is auto-created on first server start. It includes:
+- Default admin + sample student account
+- Sample listings for demo purposes
+- Automatic persistence of all new users/listings/reports
 

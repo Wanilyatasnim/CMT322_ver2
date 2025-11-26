@@ -76,10 +76,10 @@ For testing and administration:
 
 ## Troubleshooting
 
-### Database Error
-If you encounter database errors:
-1. Delete the `2street.db` file (if exists)
-2. Restart the server - it will auto-create the database
+### Data File Issues
+If you ever want to reset the seeded data:
+1. Delete `server/data/data.json`
+2. Restart the server - it will auto-create the file with default accounts/listings
 
 ### Port Already in Use
 If port 5000 or 3000 is already in use:

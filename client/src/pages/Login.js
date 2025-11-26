@@ -2,11 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const inputIds = {
-  email: 'login-email',
-  password: 'login-password'
-};
-
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,11 +35,9 @@ const Login = () => {
         
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor={inputIds.email}>Email</label>
+            <label>Email</label>
             <input
-              id={inputIds.email}
               type="email"
-              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="yourname@student.usm.my"
@@ -53,11 +46,9 @@ const Login = () => {
           </div>
           
           <div className="form-group">
-            <label htmlFor={inputIds.password}>Password</label>
+            <label>Password</label>
             <input
-              id={inputIds.password}
               type="password"
-              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
