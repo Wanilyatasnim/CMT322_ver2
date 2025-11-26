@@ -5,6 +5,18 @@ const dataStore = require('../data/dataStore');
 
 const router = express.Router();
 
+const DEFAULT_IMAGE_BY_CATEGORY = {
+  Electronics: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80',
+  Furniture: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=900&q=80',
+  Books: 'https://images.unsplash.com/photo-1529148482759-b35b25c5c27e?auto=format&fit=crop&w=900&q=80',
+  Appliances: 'https://images.unsplash.com/photo-1507086182422-97bd7ca241ef?auto=format&fit=crop&w=900&q=80',
+  Others: 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=900&q=80'
+};
+
+const GENERIC_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1517430816045-df4b7de11d1d?auto=format&fit=crop&w=900&q=80';
+
+const getDefaultImage = (category) => DEFAULT_IMAGE_BY_CATEGORY[category] || GENERIC_FALLBACK_IMAGE;
+
 // Get all listings with search and filters
 router.get('/', (req, res) => {
   try {
@@ -98,11 +110,11 @@ router.post('/', verifyToken, multer.array('images', 3), (req, res) => {
       return res.status(400).json({ error: 'Please fill in all required fields' });
     }
 
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'Please upload at least one image' });
-    }
-
-    const images = req.files.map(file => file.path || file.filename).join(',');
+    const uploadedImages =
+      req.files && req.files.length > 0
+        ? req.files.map(file => file.path || file.filename)
+        : [getDefaultImage(category)];
+    const images = uploadedImages.join(',');
 
     const newListing = dataStore.createListing({
       user_id: req.user.userId,
