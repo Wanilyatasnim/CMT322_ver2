@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('../config/multer');
 const { verifyToken } = require('../config/auth');
 const dataStore = require('../data/dataStore');
+const { sanitizeInput, validateListing } = require('../middleware/validation');
 
 const router = express.Router();
 
@@ -102,13 +103,9 @@ router.get('/:id', (req, res) => {
 });
 
 // Create listing
-router.post('/', verifyToken, multer.array('images', 3), (req, res) => {
+router.post('/', verifyToken, sanitizeInput, validateListing, multer.array('images', 3), (req, res) => {
   try {
     const { title, description, price, category, condition, location } = req.body;
-
-    if (!title || !description || !price || !category || !condition) {
-      return res.status(400).json({ error: 'Please fill in all required fields' });
-    }
 
     const uploadedImages =
       req.files && req.files.length > 0
@@ -138,7 +135,7 @@ router.post('/', verifyToken, multer.array('images', 3), (req, res) => {
 });
 
 // Update listing
-router.put('/:id', verifyToken, multer.array('images', 3), (req, res) => {
+router.put('/:id', verifyToken, sanitizeInput, validateListing, multer.array('images', 3), (req, res) => {
   try {
     const listing = dataStore.getListingById(req.params.id);
 

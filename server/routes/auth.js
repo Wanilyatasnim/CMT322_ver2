@@ -2,22 +2,14 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { generateToken, verifyToken } = require('../config/auth');
 const dataStore = require('../data/dataStore');
+const { sanitizeInput, validateRegister } = require('../middleware/validation');
 
 const router = express.Router();
 
 // Register
-router.post('/register', async (req, res) => {
+router.post('/register', sanitizeInput, validateRegister, async (req, res) => {
   try {
     const { name, email, password, phone, matricNumber } = req.body;
-
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: 'Please fill in all required fields' });
-    }
-
-    // Validate USM email
-    if (!email.endsWith('@student.usm.my')) {
-      return res.status(400).json({ error: 'Please use your USM student email (@student.usm.my)' });
-    }
 
     const existingUser = dataStore.getUserByEmail(email);
 
