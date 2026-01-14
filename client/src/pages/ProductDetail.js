@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { FaWhatsapp, FaFlag, FaCheckCircle } from 'react-icons/fa';
 import ProductCard from '../components/ProductCard';
 import { getImageUrl } from '../utils/imageUtils';
+import { escapeHTML } from '../utils/sanitize';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -147,21 +148,21 @@ const ProductDetail = () => {
 
         <div className="product-details">
           <div className="product-header">
-            <h1>{listing.title}</h1>
+            <h1>{escapeHTML(listing.title)}</h1>
             <div className="product-price-large">RM {parseFloat(listing.price).toFixed(2)}</div>
           </div>
 
           <div className="product-details-section">
             <h3>Details</h3>
-            <p><strong>Category:</strong> {listing.category}</p>
-            <p><strong>Condition:</strong> {listing.condition}</p>
-            {listing.location && <p><strong>Location:</strong> {listing.location}</p>}
+            <p><strong>Category:</strong> {escapeHTML(listing.category)}</p>
+            <p><strong>Condition:</strong> {escapeHTML(listing.condition)}</p>
+            {listing.location && <p><strong>Location:</strong> {escapeHTML(listing.location)}</p>}
             <p><strong>Listed:</strong> {new Date(listing.created_at).toLocaleDateString()}</p>
           </div>
 
           <div className="product-details-section">
             <h3>Description</h3>
-            <p style={{ whiteSpace: 'pre-wrap' }}>{listing.description}</p>
+            <p style={{ whiteSpace: 'pre-wrap' }}>{escapeHTML(listing.description)}</p>
           </div>
 
           <div className="seller-info">

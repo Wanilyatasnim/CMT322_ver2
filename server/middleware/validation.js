@@ -2,10 +2,15 @@
  * Input validation middleware
  */
 
-// Sanitize string input
+// Sanitize string input - Enhanced XSS protection
 const sanitizeString = (str) => {
   if (typeof str !== 'string') return '';
-  return str.trim().replace(/[<>]/g, '');
+  
+  return str
+    .trim()
+    .replace(/[<>]/g, '')  // Remove < and >
+    .replace(/javascript:/gi, '')  // Remove javascript: protocol
+    .replace(/on\w+=/gi, '');  // Remove event handlers like onclick=, onerror=, etc.
 };
 
 // Validate email format
@@ -19,12 +24,18 @@ const isValidUSMEmail = (email) => {
   return email && email.toLowerCase().endsWith('@student.usm.my');
 };
 
-// Sanitize object inputs
+// Sanitize object inputs - Handles both JSON and multipart/form-data
 const sanitizeInput = (req, res, next) => {
   if (req.body) {
     Object.keys(req.body).forEach(key => {
       if (typeof req.body[key] === 'string') {
         req.body[key] = sanitizeString(req.body[key]);
+      }
+      // Handle array of strings (if any)
+      if (Array.isArray(req.body[key])) {
+        req.body[key] = req.body[key].map(item => 
+          typeof item === 'string' ? sanitizeString(item) : item
+        );
       }
     });
   }

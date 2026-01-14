@@ -103,7 +103,7 @@ router.get('/:id', (req, res) => {
 });
 
 // Create listing
-router.post('/', verifyToken, sanitizeInput, validateListing, multer.array('images', 3), (req, res) => {
+router.post('/', verifyToken, multer.array('images', 3), sanitizeInput, validateListing, (req, res) => {
   try {
     const { title, description, price, category, condition, location } = req.body;
 
@@ -135,7 +135,7 @@ router.post('/', verifyToken, sanitizeInput, validateListing, multer.array('imag
 });
 
 // Update listing
-router.put('/:id', verifyToken, sanitizeInput, validateListing, multer.array('images', 3), (req, res) => {
+router.put('/:id', verifyToken, multer.array('images', 3), sanitizeInput, validateListing, (req, res) => {
   try {
     const listing = dataStore.getListingById(req.params.id);
 

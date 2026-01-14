@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { getImageUrl } from '../utils/imageUtils';
+import { escapeHTML } from '../utils/sanitize';
 
 const ProductCard = ({ listing }) => {
   const imageUrl = listing.images ? 
@@ -18,11 +19,11 @@ const ProductCard = ({ listing }) => {
         }}
       />
       <div className="product-info">
-        <h3 className="product-title">{listing.title}</h3>
+        <h3 className="product-title">{escapeHTML(listing.title)}</h3>
         <div className="product-price">RM {parseFloat(listing.price).toFixed(2)}</div>
         <div className="product-meta">
-          <span className="product-category">{listing.category}</span>
-          <span style={{ fontSize: '12px' }}>{listing.condition}</span>
+          <span className="product-category">{escapeHTML(listing.category)}</span>
+          <span style={{ fontSize: '12px' }}>{escapeHTML(listing.condition)}</span>
         </div>
       </div>
     </Link>
